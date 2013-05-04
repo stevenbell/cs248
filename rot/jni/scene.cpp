@@ -41,7 +41,8 @@ bool Scene::setupGraphics(int w, int h) {
     printGLString("Extensions", GL_EXTENSIONS);
 
     LOGI("setupGraphics(%d, %d)", w, h);
-    gProgram = createProgram(gVertexShader, gFragmentShader);
+    //gProgram = createProgram(gVertexShader, gFragmentShader);
+    gProgram = createProgram(gVertexShader, "shaders/monochrome.frag");
     if (!gProgram) {
         LOGE("Could not create program.");
         return false;

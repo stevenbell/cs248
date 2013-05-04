@@ -1,42 +1,75 @@
 
 #include <jni.h>
+#include <android/asset_manager_jni.h>
+#include "log.h"
 #include "gl_code.h"
 #include "scene.h"
 #include "jnibridge.h"
 
-void JniBridge::loadPNG(char const* path)
+AAssetManager* JniBridge::mAssetManager = 0;
+
+void JniBridge::setAssetManager(JNIEnv* env, jobject assetManager)
 {
-  jclass cls = g_env->GetObjectClass(g_pngmgr);
+  mAssetManager = AAssetManager_fromJava(env, assetManager);
+}
+
+void JniBridge::loadPNG(const char* path)
+{
+  jclass cls = jEnv->GetObjectClass(g_pngmgr);
   jmethodID mid; // Variable holding the method to call; gets reused for each call
 
   // Ask the PNG manager for a bitmap
-  mid = g_env->GetMethodID(cls, "open", "(Ljava/lang/String;)Landroid/graphics/Bitmap;");
-  jstring fileName = g_env->NewStringUTF(path); // Convert the path to a Java string
-  jobject png = g_env->CallObjectMethod(g_pngmgr, mid, fileName);
-  g_env->DeleteLocalRef(fileName); // Delete our reference to the filename string
-  g_env->NewGlobalRef(png);
+  mid = jEnv->GetMethodID(cls, "open", "(Ljava/lang/String;)Landroid/graphics/Bitmap;");
+  jstring fileName = jEnv->NewStringUTF(path); // Convert the path to a Java string
+  jobject png = jEnv->CallObjectMethod(g_pngmgr, mid, fileName);
+  jEnv->DeleteLocalRef(fileName); // Delete our reference to the filename string
+  jEnv->NewGlobalRef(png);
 
   // Get image dimensions
-  mid = g_env->GetMethodID(cls, "getWidth", "(Landroid/graphics/Bitmap;)I");
-  int width = g_env->CallIntMethod(g_pngmgr, mid, png);
-  mid = g_env->GetMethodID(cls, "getHeight", "(Landroid/graphics/Bitmap;)I");
-  int height = g_env->CallIntMethod(g_pngmgr, mid, png);
+  mid = jEnv->GetMethodID(cls, "getWidth", "(Landroid/graphics/Bitmap;)I");
+  int width = jEnv->CallIntMethod(g_pngmgr, mid, png);
+  mid = jEnv->GetMethodID(cls, "getHeight", "(Landroid/graphics/Bitmap;)I");
+  int height = jEnv->CallIntMethod(g_pngmgr, mid, png);
 /*
 		// Get pixels
-		jintArray array = g_env->NewIntArray(width * height);
-		g_env->NewGlobalRef(array);
-		mid = g_env->GetMethodID(cls, "getPixels", "(Landroid/graphics/Bitmap;[I)V");
-		g_env->CallVoidMethod(g_pngmgr, mid, png, array);
+		jintArray array = jEnv->NewIntArray(width * height);
+		jEnv->NewGlobalRef(array);
+		mid = jEnv->GetMethodID(cls, "getPixels", "(Landroid/graphics/Bitmap;[I)V");
+		jEnv->CallVoidMethod(g_pngmgr, mid, png, array);
 
-		jint *pixels = g_env->GetIntArrayElements(array, 0);
+		jint *pixels = jEnv->GetIntArrayElements(array, 0);
 		*/
 }
 
+/* Loads a text string from an APK resource
+ * @param path  Path to the resource
+ * @param text  Pointer to a pointer which will contain a reference to the
+ * text.  The user should free the memory when finished with the text buffer.
+ */
+
+void JniBridge::loadText(const char* path, char** text)
+{
+  if(!mAssetManager){
+    LOGE("JniBridge::loadText failed!  mAssetManager is NULL");
+    return;
+  }
+
+  // Open the file and read the text
+  AAsset* file = AAssetManager_open(mAssetManager, path, AASSET_MODE_BUFFER); // TODO: what's the right mode here? STREAMING?
+  const char* shaderText = (char*) AAsset_getBuffer(file);
+
+  // Copy the text to the caller
+  *text = (char*) malloc(strlen(shaderText) + 1);
+  strcpy(*text, shaderText);
+
+  AAsset_close(file); // TODO: does this free the buffer?
+}
 
 extern "C" {
     JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_GL2JNILib_init(JNIEnv * env, jobject obj,  jint width, jint height);
     JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_GL2JNILib_loadLevel(JNIEnv * env, jobject obj, jstring levelName);
     JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_GL2JNILib_step(JNIEnv * env, jobject obj);
+    JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_GL2JNILib_setAssetManager(JNIEnv * env, jobject obj, jobject am);
 };
 
 JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_GL2JNILib_init(JNIEnv * env, jobject obj,  jint width, jint height)
@@ -52,4 +85,9 @@ JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_GL2JNILib_loadLevel(JNIEnv *
 JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_GL2JNILib_step(JNIEnv * env, jobject obj)
 {
     Scene::instance()->renderFrame();
+}
+
+JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_GL2JNILib_setAssetManager(JNIEnv * env, jobject obj, jobject am)
+{
+    JniBridge::setAssetManager(env, am);
 }

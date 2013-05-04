@@ -19,6 +19,6 @@ include $(CLEAR_VARS)
 LOCAL_MODULE    := libgl2jni
 LOCAL_CFLAGS    := -Werror
 LOCAL_SRC_FILES := gl_code.cpp gl_util.cpp jnibridge.cpp level.cpp model.cpp scene.cpp
-LOCAL_LDLIBS    := -llog -lGLESv2
+LOCAL_LDLIBS    := -llog -landroid -lGLESv2
 
 include $(BUILD_SHARED_LIBRARY)

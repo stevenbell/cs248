@@ -7,6 +7,7 @@
 void printGLString(const char *name, GLenum s);
 void checkGlError(const char* op);
 GLuint loadShader(GLenum shaderType, const char* pSource);
+GLuint loadShaderFromAsset(GLenum shaderType, const char* path);
 GLuint createProgram(const char* pVertexSource, const char* pFragmentSource);
 
 #endif

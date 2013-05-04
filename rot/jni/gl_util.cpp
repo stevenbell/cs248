@@ -5,6 +5,7 @@
 
 #include <android/log.h>
 #include <malloc.h>
+#include "jnibridge.h"
 #include "log.h"
 #include "gl_util.h"
 
@@ -21,6 +22,13 @@ void checkGlError(const char* op) {
     }
 }
 
+GLuint loadShaderFromAsset(GLenum shaderType, const char* path)
+{
+  char* text;
+  JniBridge::loadText(path, &text);
+  GLuint shader = loadShader(shaderType, text);
+  return(shader);
+}
 
 GLuint loadShader(GLenum shaderType, const char* pSource) {
     GLuint shader = glCreateShader(shaderType);
@@ -53,11 +61,13 @@ GLuint createProgram(const char* pVertexSource, const char* pFragmentSource) {
     if (!vertexShader) {
         return 0;
     }
-
-    GLuint pixelShader = loadShader(GL_FRAGMENT_SHADER, pFragmentSource);
+LOGI("createProgram ok");
+    //GLuint pixelShader = loadShader(GL_FRAGMENT_SHADER, pFragmentSource);
+    GLuint pixelShader = loadShaderFromAsset(GL_FRAGMENT_SHADER, pFragmentSource);
     if (!pixelShader) {
         return 0;
     }
+LOGI("createProgram loaded shaders");
 
     GLuint program = glCreateProgram();
     if (program) {

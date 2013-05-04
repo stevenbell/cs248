@@ -1,4 +1,7 @@
 package edu.stanford.sebell.rot;
+
+import android.content.res.AssetManager;
+
 /*
  * Java-side declarations for JNI calls.
  * Steven Bell <sebell@stanford.edu>
@@ -18,4 +21,5 @@ public class GL2JNILib {
      public static native void init(int width, int height);
      public static native void loadLevel(String levelName);
      public static native void step();
+     public static native void setAssetManager(AssetManager am);
 }

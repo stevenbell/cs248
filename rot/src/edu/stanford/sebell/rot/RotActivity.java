@@ -19,6 +19,8 @@ public class RotActivity extends Activity implements GameSwitcher {
     protected void onCreate(Bundle icicle) {
         super.onCreate(icicle);
         setContentView(R.layout.main);
+        
+        GL2JNILib.setAssetManager(getAssets());
 
         // Create/extract fragments for each of the game screens
         FragmentManager fm = getFragmentManager();

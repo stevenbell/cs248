@@ -1,14 +1,22 @@
 #ifndef __JNI_BRIDGE_H__
 #define __JNI_BRIDGE_H__
 
+#include <jni.h>
+#include <android/asset_manager.h>
+
 class JniBridge
 {
 public:
-  void loadPNG(char const* path);
+  static void setAssetManager(JNIEnv* env, jobject assetManager);
+  void loadPNG(const char* path);
+  static void loadText(const char* path, char** text);
 
 private:
   jobject g_pngmgr;
-  JNIEnv *g_env;
+
+  static AAssetManager* mAssetManager;
+
+  JNIEnv *jEnv;
 };
 
 #endif
