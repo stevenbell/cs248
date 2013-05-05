@@ -22,4 +22,5 @@ public class GL2JNILib {
      public static native void loadLevel(String levelName);
      public static native void step();
      public static native void setAssetManager(AssetManager am);
+     public static native void touchEvent(float x, float y);
 }

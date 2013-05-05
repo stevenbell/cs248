@@ -57,10 +57,12 @@ void JniBridge::loadText(const char* path, char** text)
   // Open the file and read the text
   AAsset* file = AAssetManager_open(mAssetManager, path, AASSET_MODE_BUFFER); // TODO: what's the right mode here? STREAMING?
   const char* shaderText = (char*) AAsset_getBuffer(file);
+  int nBytes = AAsset_getLength(file);
 
-  // Copy the text to the caller
-  *text = (char*) malloc(strlen(shaderText) + 1);
-  strcpy(*text, shaderText);
+  // Copy the text to the caller, and append the all-important \0
+  *text = (char*) malloc(nBytes + 1);
+  memcpy(*text, shaderText, nBytes);
+  (*text)[nBytes] = '\0';
 
   AAsset_close(file); // TODO: does this free the buffer?
 }
@@ -70,6 +72,7 @@ extern "C" {
     JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_GL2JNILib_loadLevel(JNIEnv * env, jobject obj, jstring levelName);
     JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_GL2JNILib_step(JNIEnv * env, jobject obj);
     JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_GL2JNILib_setAssetManager(JNIEnv * env, jobject obj, jobject am);
+    JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_GL2JNILib_touchEvent(JNIEnv * env, jobject obj,  jfloat x, jfloat y);
 };
 
 JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_GL2JNILib_init(JNIEnv * env, jobject obj,  jint width, jint height)
@@ -90,4 +93,10 @@ JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_GL2JNILib_step(JNIEnv * env,
 JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_GL2JNILib_setAssetManager(JNIEnv * env, jobject obj, jobject am)
 {
     JniBridge::setAssetManager(env, am);
+}
+
+JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_GL2JNILib_touchEvent(JNIEnv * env, jobject obj,  jfloat x, jfloat y)
+{
+  LOGI("Touch event: %f %f", x, y);
+    //Scene::instance()->setupGraphics(width, height);
 }

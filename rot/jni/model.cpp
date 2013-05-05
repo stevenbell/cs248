@@ -163,7 +163,7 @@ void Model::loadTexture(const char* filename)
 }
 */
 
-void Model::render(GLuint gvPositionHandle)
+void Model::render(GLuint attrVertexPosition, GLuint attrVertexNormal)
 {
   GLfloat vertexArr[9]; // 3 vertices with 3 coordinates define a triangle
   GLfloat normalArr[9]; // Vertex normals
@@ -188,9 +188,8 @@ void Model::render(GLuint gvPositionHandle)
 
     glBindBuffer(GL_ARRAY_BUFFER, mVertexBuf);
     glBufferData(GL_ARRAY_BUFFER, 9*sizeof(GLfloat), vertexArr, GL_DYNAMIC_DRAW); // STATIC vs DYNAMIC?
-    glVertexAttribPointer(gvPositionHandle, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glVertexAttribPointer(attrVertexPosition, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
-/*
     if(mFlatShading){
       normalArr[0] = normalArr[3] = normalArr[6] = mFaceNormals[i].x;
       normalArr[1] = normalArr[4] = normalArr[7] = mFaceNormals[i].y;
@@ -210,7 +209,6 @@ void Model::render(GLuint gvPositionHandle)
       normalArr[7] = mVertexNormals[mTriangles[i].cNorm].y;
       normalArr[8] = mVertexNormals[mTriangles[i].cNorm].z;
     }
-*/
     // printf("%f %f %f    %f %f %f\n", mFaceNormals[i].x, mFaceNormals[i].y, mFaceNormals[i].z, mVertexNormals[mTriangles[i].aNorm].x, mVertexNormals[mTriangles[i].aNorm].y, mVertexNormals[mTriangles[i].aNorm].z);
 
 /*
@@ -220,17 +218,15 @@ void Model::render(GLuint gvPositionHandle)
       vertexArr[6], vertexArr[7], vertexArr[8],
       mFaceNormals[i].x, mFaceNormals[i].y, mFaceNormals[i].z);
 */
-/*
     glBindBuffer(GL_ARRAY_BUFFER, mNormalBuf);
     glBufferData(GL_ARRAY_BUFFER, 9*sizeof(GLfloat), normalArr, GL_DYNAMIC_DRAW);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_TRUE, 0, 0); // Normalize the normals
-*/
+    glVertexAttribPointer(attrVertexNormal, 3, GL_FLOAT, GL_TRUE, 0, 0); // Normalize the normals
 /*
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, mTextureBuf);
     */
 
-    glDrawArrays(GL_LINE_LOOP, 0, 3);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
   }
 }
 

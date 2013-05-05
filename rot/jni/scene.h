@@ -1,9 +1,12 @@
 #ifndef __SCENE_H__
 #define __SCENE_H__
 
-#include "model.h"
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
+
+#define _GLIBCXX_USE_C99_MATH 1
+#include <glm.hpp>
+#include "model.h"
 
 /* Singleton class representing the scene.
  * This contains handles to the GL resources.
@@ -23,10 +26,25 @@ private:
   Model* theBunny;
 
   GLuint gProgram;
-  GLuint gvPositionHandle;
+  GLuint mAttrVertexPosition;
+  GLuint mAttrVertexNormal;
 
   GLuint mVertexBuffer;
   GLuint mNormalBuffer;
+
+  // Shader uniform handles
+  GLuint mUniformModelView;
+  GLuint mUniformProjection;
+  GLuint mUniformLightPos;
+  GLuint mUniformCameraPos;
+
+  GLuint mUniformAmbient;
+  GLuint mUniformDiffuse;
+  GLuint mUniformSpecular;
+
+  glm::vec3 mCameraPosition;
+  glm::mat4 mProjectionMatrix;
+  glm::mat4 mModelViewMatrix;
 };
 
 #endif

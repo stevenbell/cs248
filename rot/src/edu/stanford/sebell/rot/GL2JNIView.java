@@ -54,7 +54,7 @@ class GL2JNIView extends GLSurfaceView {
 
     public GL2JNIView(Context context) {
         super(context);
-        init(false, 0, 0);
+        init(false, 8, 0); // Use 8-bit depth
     }
 
     public GL2JNIView(Context context, boolean translucent, int depth, int stencil) {
@@ -90,6 +90,12 @@ class GL2JNIView extends GLSurfaceView {
         /* Set the renderer responsible for frame rendering */
         setRenderer(new Renderer());
     }
+    
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        GL2JNILib.touchEvent(event.getX(), event.getY());
+        return(true); 
+    };
 
     private static class ContextFactory implements GLSurfaceView.EGLContextFactory {
         private static int EGL_CONTEXT_CLIENT_VERSION = 0x3098;
