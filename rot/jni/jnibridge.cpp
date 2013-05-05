@@ -6,39 +6,60 @@
 #include "scene.h"
 #include "jnibridge.h"
 
-AAssetManager* JniBridge::mAssetManager = 0;
+JniBridge* JniBridge::mInstance = 0;
+
+JniBridge* JniBridge::instance()
+{
+  if(mInstance == NULL){
+    mInstance = new JniBridge;
+  }
+  return(mInstance);
+}
+
+JniBridge::JniBridge()
+{
+  mJniEnv = 0;
+  mAssetManager = 0;
+}
 
 void JniBridge::setAssetManager(JNIEnv* env, jobject assetManager)
 {
   mAssetManager = AAssetManager_fromJava(env, assetManager);
 }
 
-void JniBridge::loadPNG(const char* path)
+void JniBridge::setPngLoader(JNIEnv* env, jobject pngLoader)
 {
-  jclass cls = jEnv->GetObjectClass(g_pngmgr);
+  mJniEnv = env;
+  mPngLoader = env->NewGlobalRef(pngLoader);
+}
+
+void JniBridge::loadPng(const char* path)
+{
+  jclass cls = mJniEnv->GetObjectClass(mPngLoader);
   jmethodID mid; // Variable holding the method to call; gets reused for each call
 
   // Ask the PNG manager for a bitmap
-  mid = jEnv->GetMethodID(cls, "open", "(Ljava/lang/String;)Landroid/graphics/Bitmap;");
-  jstring fileName = jEnv->NewStringUTF(path); // Convert the path to a Java string
-  jobject png = jEnv->CallObjectMethod(g_pngmgr, mid, fileName);
-  jEnv->DeleteLocalRef(fileName); // Delete our reference to the filename string
-  jEnv->NewGlobalRef(png);
+  mid = mJniEnv->GetMethodID(cls, "open", "(Ljava/lang/String;)Landroid/graphics/Bitmap;");
+  jstring fileName = mJniEnv->NewStringUTF(path); // Convert the path to a Java string
+  jobject png = mJniEnv->CallObjectMethod(mPngLoader, mid, fileName);
+  mJniEnv->DeleteLocalRef(fileName); // Delete our reference to the filename string
+  mJniEnv->NewGlobalRef(png);
 
   // Get image dimensions
-  mid = jEnv->GetMethodID(cls, "getWidth", "(Landroid/graphics/Bitmap;)I");
-  int width = jEnv->CallIntMethod(g_pngmgr, mid, png);
-  mid = jEnv->GetMethodID(cls, "getHeight", "(Landroid/graphics/Bitmap;)I");
-  int height = jEnv->CallIntMethod(g_pngmgr, mid, png);
+  mid = mJniEnv->GetMethodID(cls, "getWidth", "(Landroid/graphics/Bitmap;)I");
+  int width = mJniEnv->CallIntMethod(mPngLoader, mid, png);
+  mid = mJniEnv->GetMethodID(cls, "getHeight", "(Landroid/graphics/Bitmap;)I");
+  int height = mJniEnv->CallIntMethod(mPngLoader, mid, png);
 /*
 		// Get pixels
-		jintArray array = jEnv->NewIntArray(width * height);
-		jEnv->NewGlobalRef(array);
-		mid = jEnv->GetMethodID(cls, "getPixels", "(Landroid/graphics/Bitmap;[I)V");
-		jEnv->CallVoidMethod(g_pngmgr, mid, png, array);
+		jintArray array = mJniEnv->NewIntArray(width * height);
+		mJniEnv->NewGlobalRef(array);
+		mid = mJniEnv->GetMethodID(cls, "getPixels", "(Landroid/graphics/Bitmap;[I)V");
+		mJniEnv->CallVoidMethod(mPngLoader, mid, png, array);
 
-		jint *pixels = jEnv->GetIntArrayElements(array, 0);
+		jint *pixels = mJniEnv->GetIntArrayElements(array, 0);
 		*/
+  LOGI("Loaded image %s of size %d x %d", path, width, height);
 }
 
 /* Loads a text string from an APK resource
@@ -71,6 +92,7 @@ extern "C" {
     JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_GL2JNILib_init(JNIEnv * env, jobject obj,  jint width, jint height);
     JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_GL2JNILib_loadLevel(JNIEnv * env, jobject obj, jstring levelName);
     JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_GL2JNILib_step(JNIEnv * env, jobject obj);
+    JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_GL2JNILib_setPngLoader(JNIEnv * env, jobject obj, jobject loader);
     JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_GL2JNILib_setAssetManager(JNIEnv * env, jobject obj, jobject am);
     JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_GL2JNILib_touchEvent(JNIEnv * env, jobject obj,  jfloat x, jfloat y);
 };
@@ -92,11 +114,17 @@ JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_GL2JNILib_step(JNIEnv * env,
 
 JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_GL2JNILib_setAssetManager(JNIEnv * env, jobject obj, jobject am)
 {
-    JniBridge::setAssetManager(env, am);
+    JniBridge::instance()->setAssetManager(env, am);
+}
+
+JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_GL2JNILib_setPngLoader(JNIEnv * env, jobject obj, jobject loader)
+{
+    JniBridge::instance()->setPngLoader(env, loader);
 }
 
 JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_GL2JNILib_touchEvent(JNIEnv * env, jobject obj,  jfloat x, jfloat y)
 {
   LOGI("Touch event: %f %f", x, y);
+  JniBridge::instance()->loadPng("levels/01/slice0000.png");
     //Scene::instance()->setupGraphics(width, height);
 }

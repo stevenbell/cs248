@@ -7,16 +7,24 @@
 class JniBridge
 {
 public:
-  static void setAssetManager(JNIEnv* env, jobject assetManager);
-  void loadPNG(const char* path);
-  static void loadText(const char* path, char** text);
+  // Singleton access method
+  static JniBridge* instance();
+
+  // These methods are invoked from the Java side to set up the connection
+  void setAssetManager(JNIEnv* env, jobject assetManager);
+  void setPngLoader(JNIEnv* env, jobject pngLoader);
+
+  // These methods are invoked from the C++ side to retrieve things from the JVM
+  void loadPng(const char* path);
+  void loadText(const char* path, char** text);
 
 private:
-  jobject g_pngmgr;
+  JniBridge();
+  static JniBridge* mInstance;
 
-  static AAssetManager* mAssetManager;
-
-  JNIEnv *jEnv;
+  JNIEnv *mJniEnv;
+  AAssetManager* mAssetManager;
+  jobject mPngLoader;
 };
 
 #endif

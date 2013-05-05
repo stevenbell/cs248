@@ -14,6 +14,7 @@ public class RotActivity extends Activity implements GameSwitcher {
 
     IntroFrag introFrag;
     GameFrag gameFrag;
+    AssetLoader loader;
 
     @Override
     protected void onCreate(Bundle icicle) {
@@ -21,6 +22,8 @@ public class RotActivity extends Activity implements GameSwitcher {
         setContentView(R.layout.main);
         
         GL2JNILib.setAssetManager(getAssets());
+        loader = new AssetLoader(getAssets());
+        GL2JNILib.setPngLoader(loader);
 
         // Create/extract fragments for each of the game screens
         FragmentManager fm = getFragmentManager();

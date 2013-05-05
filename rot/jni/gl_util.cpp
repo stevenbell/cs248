@@ -26,7 +26,7 @@ void checkGlError(const char* op) {
 GLuint loadShaderFromAsset(GLenum shaderType, const char* path)
 {
   char* text;
-  JniBridge::loadText(path, &text);
+  JniBridge::instance()->loadText(path, &text);
   LOGV("Loaded shader from %s:\n%s", path, text);
   GLuint shader = loadShader(shaderType, text);
   free(text);

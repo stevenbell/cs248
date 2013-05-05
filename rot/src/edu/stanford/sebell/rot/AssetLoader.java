@@ -9,12 +9,17 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
 public class AssetLoader {
-	private AssetManager manager;
+	private AssetManager mManager;
+	
+	public AssetLoader(AssetManager man)
+	{
+	    mManager = man;
+	}
 
     public Bitmap open(String path)
     {
         try {
-            return BitmapFactory.decodeStream(manager.open(path));
+            return BitmapFactory.decodeStream(mManager.open(path));
         }
         catch (Exception e) { }
         return null;
