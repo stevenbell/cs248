@@ -39,7 +39,11 @@ public class RotActivity extends Activity implements GameSwitcher {
 
     @Override
     public void startGame() {
+        // TODO: Load the selected level
+        
+        
         // Go full screen?
+        // Switch to the "playing" fragment
         FragmentTransaction ft = getFragmentManager().beginTransaction();
         ft.hide(introFrag);
         ft.show(gameFrag);

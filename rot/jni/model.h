@@ -34,9 +34,10 @@ class Model
 {
 public:
   Model(const char* filename, GLuint vertexBuf, GLuint normalBuf);
+  bool loadTexture(const char* filename);
+
   void render(GLuint attrVertexPosition, GLuint attrVertexNormal);
   void toggleFlatShading() { mFlatShading = !mFlatShading; };
-  //void loadTexture(const char* filename);
   Extents extents() { return mExtents; }
 
 private:

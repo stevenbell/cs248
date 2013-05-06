@@ -1,4 +1,3 @@
-
 #include <android/log.h>
 #include <gtc/matrix_transform.hpp>
 #include <gtc/type_ptr.hpp>
@@ -20,7 +19,7 @@ Scene::Scene(void)
 {
   glGenBuffers(1, &mVertexBuffer);
   glGenBuffers(1, &mNormalBuffer);
-  theBunny = new Model("/sdcard/rot/cube.obj", mVertexBuffer, mNormalBuffer);
+  theBunny = new Model("/sdcard/rot/bunny.obj", mVertexBuffer, mNormalBuffer);
 }
 
 bool Scene::setupGraphics(int w, int h) {

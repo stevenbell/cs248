@@ -5,6 +5,7 @@
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
 #include "log.h"
+#include "jnibridge.h"
 #include "model.h"
 
 
@@ -68,12 +69,12 @@ Model::Model(const char* filename, GLuint vertexBuf, GLuint normalBuf)
       fscanf(f, " %[^\n]", lineBuf);
     }
     else{
-      printf("Unexpected input character '%c'\n", type1);
+      LOGI("Unexpected input character '%c' while reading OBJ file %s\n", type1, filename);
       fscanf(f, " %[^\n]", lineBuf); // Eat the whole line
     }
   }
 
-  printf("Loaded model %s with %ld vertices, %ld faces\n", filename, mVertices.size(), mTriangles.size());
+  LOGI("Loaded model %s with %ld vertices, %ld faces\n", filename, mVertices.size(), mTriangles.size());
 
   calculateFaceNormals();
   if(mVertexNormals.size() == 0){
@@ -83,6 +84,7 @@ Model::Model(const char* filename, GLuint vertexBuf, GLuint normalBuf)
   mVertexBuf = vertexBuf;
   mNormalBuf = normalBuf;
   mFlatShading = true;
+  mUseTexture = (mTextureCoords.size() == mVertices.size());
 }
 
 /* Calculate face normals using the vertices of each triangle.
@@ -134,18 +136,20 @@ void Model::calculateVertexNormals()
     mVertexNormals.push_back(average / adjoiningCount);
   }
 }
+
 /*
-void Model::loadTexture(const char* filename)
+ * Returns true if texturing is enabled (texture coordinates exist and
+ * the texture image is valid), false otherwise.
+ */
+bool Model::loadTexture(const char* filename)
 {
-  // Load the bitmap using SDL
-  mTextureImage = SDL_LoadBMP(filename);
-  if(mTextureImage == NULL){
-    printf("Error loading image %s", filename);
-    return;
+  if(mTextureCoords.size() != mVertices.size()) {
+    mUseTexture = false; // Should be set already...
+    return false;
   }
-  else{
-    printf("Loaded image of size %d x %d\n", mTextureImage->w, mTextureImage->h);
-  }
+
+  // TODO: what is returned here?
+  JniBridge::instance()->loadPng(filename);
 
   // Set up textures
   glGenTextures(1, &mTextureBuf);
@@ -155,13 +159,13 @@ void Model::loadTexture(const char* filename)
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_CLAMP_TO_EDGE);
-
+/*
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, mTextureImage->w, mTextureImage->h,
      0, GL_BGRA, GL_UNSIGNED_BYTE, mTextureImage->pixels);
-
-  mUseTexture = true;
-}
 */
+  mUseTexture = true;
+  return mUseTexture;
+}
 
 void Model::render(GLuint attrVertexPosition, GLuint attrVertexNormal)
 {
