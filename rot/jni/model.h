@@ -33,16 +33,17 @@ struct Extents {
 class Model
 {
 public:
-  Model(const char* filename, GLuint vertexBuf, GLuint normalBuf);
+  Model(const char* filename, GLuint attributeLocs[3]);
   bool loadTexture(const char* filename);
 
-  void render(GLuint attrVertexPosition, GLuint attrVertexNormal);
+  void render();
   void toggleFlatShading() { mFlatShading = !mFlatShading; };
   Extents extents() { return mExtents; }
 
 private:
   void calculateFaceNormals();
   void calculateVertexNormals();
+  void loadVertexBuffers();
 
   bool mFlatShading;
   bool mUseTexture;
@@ -56,12 +57,17 @@ private:
   Extents mExtents;
 
   // OpenGL/shader handles
-  GLuint mVertexBuf; // Handle for vertex buffer
-  GLuint mNormalBuf;
-  GLuint mTextureBuf;
+  enum BufferType {
+    VERTEX,
+    NORMAL,
+    TEXTURE,
+    INDEX,
+    N_VERTEX_BUFFERS
+  };
 
-  // TODO: replace
-  //SDL_Surface *mTextureImage;
+  GLuint mAttributeBuffers[N_VERTEX_BUFFERS];
+  GLuint mAttributeLocations[3];
+  GLuint mTextureBuf;
 
 };
 

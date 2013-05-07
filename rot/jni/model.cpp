@@ -4,12 +4,13 @@
 #include <math.h>
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
+#include "gl_util.h"
 #include "log.h"
 #include "jnibridge.h"
 #include "model.h"
 
 
-Model::Model(const char* filename, GLuint vertexBuf, GLuint normalBuf)
+Model::Model(const char* filename, GLuint attributeLocs[3])
 {
   char lineBuf[1024];
 
@@ -81,10 +82,18 @@ Model::Model(const char* filename, GLuint vertexBuf, GLuint normalBuf)
     calculateVertexNormals();
   }
 
-  mVertexBuf = vertexBuf;
-  mNormalBuf = normalBuf;
+  // Copy the handles to the shader attributes
+  mAttributeLocations[VERTEX] = attributeLocs[VERTEX];
+  mAttributeLocations[NORMAL] = attributeLocs[NORMAL];
+  mAttributeLocations[TEXTURE] = attributeLocs[TEXTURE];
+
+  // Create buffer handles for all of our vertex attribute buffers
+  glGenBuffers(4, mAttributeBuffers);
+
+  loadVertexBuffers();
+
   mFlatShading = true;
-  mUseTexture = (mTextureCoords.size() == mVertices.size());
+  mUseTexture = false; // Not ready to use texture until we've loaded one
 }
 
 /* Calculate face normals using the vertices of each triangle.
@@ -138,13 +147,63 @@ void Model::calculateVertexNormals()
 }
 
 /*
+ * Put the geometry data into the vertex buffers on the GPU.
+ */
+void Model::loadVertexBuffers()
+{
+  glEnableVertexAttribArray(mAttributeBuffers[VERTEX]);
+  glEnableVertexAttribArray(mAttributeBuffers[NORMAL]);
+  glEnableVertexAttribArray(mAttributeBuffers[INDEX]);
+
+  int arrSize = sizeof(float) * 3 * mVertices.size();
+  float* vertexArr = (float*)malloc(arrSize);
+  float* normalArr = (float*)malloc(arrSize);
+  // TODO: texture coordinates
+
+  for(int i = 0; i < mVertices.size(); i++){
+    vertexArr[3*i + 0] = mVertices[i].x;
+    vertexArr[3*i + 1] = mVertices[i].y;
+    vertexArr[3*i + 2] = mVertices[i].z;
+    normalArr[3*i + 0] = mVertexNormals[i].x;
+    normalArr[3*i + 1] = mVertexNormals[i].y;
+    normalArr[3*i + 2] = mVertexNormals[i].z;
+  }
+
+  glBindBuffer(GL_ARRAY_BUFFER, mAttributeBuffers[VERTEX]);
+  glBufferData(GL_ARRAY_BUFFER, arrSize, vertexArr, GL_STATIC_DRAW);
+
+  glBindBuffer(GL_ARRAY_BUFFER, mAttributeBuffers[NORMAL]);
+  glBufferData(GL_ARRAY_BUFFER, arrSize, normalArr, GL_STATIC_DRAW);
+
+  // TODO: once we have textures
+
+  int indexSize = sizeof(GLushort) * 3 * mTriangles.size();
+  GLushort* indexArr = (GLushort*)malloc(indexSize);
+  for(int i = 0; i < mTriangles.size(); i++){
+    indexArr[3*i + 0] = mTriangles[i].a;
+    indexArr[3*i + 1] = mTriangles[i].b;
+    indexArr[3*i + 2] = mTriangles[i].c;
+  }
+
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mAttributeBuffers[INDEX]);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexSize, indexArr, GL_STATIC_DRAW);
+  //glBindBuffer(GL_ARRAY_BUFFER, mAttributeBuffers[INDEX]);
+  //glBufferData(GL_ARRAY_BUFFER, indexSize, indexArr, GL_STATIC_DRAW);
+
+  // The data is now on the GPU, so we don't need it anymore
+  free(vertexArr);
+  free(normalArr);
+  free(indexArr);
+}
+
+/*
  * Returns true if texturing is enabled (texture coordinates exist and
  * the texture image is valid), false otherwise.
  */
 bool Model::loadTexture(const char* filename)
 {
   if(mTextureCoords.size() != mVertices.size()) {
-    mUseTexture = false; // Should be set already...
+    mUseTexture = false;
     return false;
   }
 
@@ -167,70 +226,15 @@ bool Model::loadTexture(const char* filename)
   return mUseTexture;
 }
 
-void Model::render(GLuint attrVertexPosition, GLuint attrVertexNormal)
+void Model::render()
 {
-  GLfloat vertexArr[9]; // 3 vertices with 3 coordinates define a triangle
-  GLfloat normalArr[9]; // Vertex normals
-
-  // Iterate through all of the triangles and draw them
-  // TODO: This is grossly inefficient.  Calculate all the points once,
-  // put them in the vertex buffer, and then just render it over and over.
-  for(int i = 0; i < mTriangles.size(); i++){
-    // Get the point index from the triangle, and look up the vertex coordinates
-    // Vertex indices start at zero
-    vertexArr[0] = mVertices[mTriangles[i].a].x;
-    vertexArr[1] = mVertices[mTriangles[i].a].y;
-    vertexArr[2] = mVertices[mTriangles[i].a].z;
-
-    vertexArr[3] = mVertices[mTriangles[i].b].x;
-    vertexArr[4] = mVertices[mTriangles[i].b].y;
-    vertexArr[5] = mVertices[mTriangles[i].b].z;
-  
-    vertexArr[6] = mVertices[mTriangles[i].c].x;
-    vertexArr[7] = mVertices[mTriangles[i].c].y;
-    vertexArr[8] = mVertices[mTriangles[i].c].z;
-
-    glBindBuffer(GL_ARRAY_BUFFER, mVertexBuf);
-    glBufferData(GL_ARRAY_BUFFER, 9*sizeof(GLfloat), vertexArr, GL_DYNAMIC_DRAW); // STATIC vs DYNAMIC?
-    glVertexAttribPointer(attrVertexPosition, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-    if(mFlatShading){
-      normalArr[0] = normalArr[3] = normalArr[6] = mFaceNormals[i].x;
-      normalArr[1] = normalArr[4] = normalArr[7] = mFaceNormals[i].y;
-      normalArr[2] = normalArr[5] = normalArr[8] = mFaceNormals[i].z;
-    }
-    else{
-      //printf("norm indices: %d %d %d\n", mTriangles[i].aNorm, mTriangles[i].bNorm, mTriangles[i].cNorm);
-      normalArr[0] = mVertexNormals[mTriangles[i].aNorm].x;
-      normalArr[1] = mVertexNormals[mTriangles[i].aNorm].y;
-      normalArr[2] = mVertexNormals[mTriangles[i].aNorm].z;
-  
-      normalArr[3] = mVertexNormals[mTriangles[i].bNorm].x;
-      normalArr[4] = mVertexNormals[mTriangles[i].bNorm].y;
-      normalArr[5] = mVertexNormals[mTriangles[i].bNorm].z;
+  glBindBuffer(GL_ARRAY_BUFFER, mAttributeBuffers[VERTEX]);
+  glVertexAttribPointer(mAttributeLocations[VERTEX], 3, GL_FLOAT, GL_FALSE, 0, 0); // Note that '3' is coords/vertex, not a count
     
-      normalArr[6] = mVertexNormals[mTriangles[i].cNorm].x;
-      normalArr[7] = mVertexNormals[mTriangles[i].cNorm].y;
-      normalArr[8] = mVertexNormals[mTriangles[i].cNorm].z;
-    }
-    // printf("%f %f %f    %f %f %f\n", mFaceNormals[i].x, mFaceNormals[i].y, mFaceNormals[i].z, mVertexNormals[mTriangles[i].aNorm].x, mVertexNormals[mTriangles[i].aNorm].y, mVertexNormals[mTriangles[i].aNorm].z);
+  glBindBuffer(GL_ARRAY_BUFFER, mAttributeBuffers[NORMAL]);
+  glVertexAttribPointer(mAttributeLocations[NORMAL], 3, GL_FLOAT, GL_TRUE, 0, 0); // Normalize the normals
 
-/*
-    printf("[%0.3f %0.3f %0.3f   %0.3f %0.3f %0.3f    %0.3f %0.3f %0.3f ]  %0.3f %0.3f %0.3f\n", 
-      vertexArr[0], vertexArr[1], vertexArr[2],
-      vertexArr[3], vertexArr[4], vertexArr[5],
-      vertexArr[6], vertexArr[7], vertexArr[8],
-      mFaceNormals[i].x, mFaceNormals[i].y, mFaceNormals[i].z);
-*/
-    glBindBuffer(GL_ARRAY_BUFFER, mNormalBuf);
-    glBufferData(GL_ARRAY_BUFFER, 9*sizeof(GLfloat), normalArr, GL_DYNAMIC_DRAW);
-    glVertexAttribPointer(attrVertexNormal, 3, GL_FLOAT, GL_TRUE, 0, 0); // Normalize the normals
-/*
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, mTextureBuf);
-    */
-
-    glDrawArrays(GL_TRIANGLES, 0, 3);
-  }
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mAttributeBuffers[INDEX]);
+  glDrawElements(GL_TRIANGLES, 3 * mTriangles.size(), GL_UNSIGNED_SHORT, 0);
 }
 

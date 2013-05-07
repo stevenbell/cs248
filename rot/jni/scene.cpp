@@ -17,9 +17,7 @@ Scene* Scene::instance(void)
 
 Scene::Scene(void)
 {
-  glGenBuffers(1, &mVertexBuffer);
-  glGenBuffers(1, &mNormalBuffer);
-  theBunny = new Model("/sdcard/rot/bunny.obj", mVertexBuffer, mNormalBuffer);
+
 }
 
 bool Scene::setupGraphics(int w, int h) {
@@ -57,6 +55,10 @@ bool Scene::setupGraphics(int w, int h) {
 
     glViewport(0, 0, w, h);
     checkGlError("glViewport");
+
+    GLuint attributeLocs[] = {mAttrVertexPosition, mAttrVertexNormal, 0};
+    theBunny = new Model("/sdcard/rot/bunny.obj", attributeLocs);
+
     return true;
 }
 
@@ -113,7 +115,7 @@ void Scene::renderFrame(void)
   // Calculate the orientation and camera matrices
   mCameraPosition = glm::vec3(0.0f, 0.0f, -3.0f);
   mProjectionMatrix = calculateCameraView(mCameraPosition, 1.0f);
-  mModelViewMatrix = calculateModelView(-20.0f, rotation, 0.0f, 1.0f);
+  mModelViewMatrix = calculateModelView(-20.0f, rotation, 0.0f, 5.0f);
 
   // Set up the orientation and camera projection
   glUniformMatrix4fv(mUniformModelView, 1, false, (GLfloat*)glm::value_ptr(mModelViewMatrix));
@@ -128,6 +130,6 @@ void Scene::renderFrame(void)
   checkGlError("set uniforms");
 
   // Draw the model
-  theBunny->render(mAttrVertexPosition, mAttrVertexNormal);
+  theBunny->render();
   checkGlError("Render model");
 }
