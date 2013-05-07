@@ -17,8 +17,23 @@ Scene* Scene::instance(void)
 
 Scene::Scene(void)
 {
+  FILE* f = fopen("/sdcard/rot/movement.spline", "r");
+  float t = 0.0f;
+  while(!feof(f)){
+    // Read each line of the file and append to the spline
+    float x, y, z;
+    fscanf(f, "%f %f %f", &x, &y, &z);
+    sX.addKeypoint(t, x);
+    sY.addKeypoint(t, y);
+    sZ.addKeypoint(t, z);
+    t += 1.0;
+  }
 
+  // HACK: hard-code the quaternions here
+  // Leave startQuat alone
+  endQuat = endQuat.rotate(glm::vec3(1.0f, 1.0f, 0.2f), 2.0f);
 }
+
 
 bool Scene::setupGraphics(int w, int h) {
     // Print debugging information
@@ -113,9 +128,24 @@ void Scene::renderFrame(void)
   checkGlError("glUseProgram");
 
   // Calculate the orientation and camera matrices
+  // HACK to do animation for HW 5
+  static float time = 1.0f;
+  glm::mat4 m(1.0); // Identity matrix
+
+  m = glm::translate(m, glm::vec3(sX.getValue(time), sY.getValue(time), sZ.getValue(time)));
+
+  Quat rotInterp = Quat::slerp(startQuat, endQuat, (time - 1.0f) / 4.0f);
+  m = m * rotInterp.rotationMatrix();
+
+  time += 0.03f;
+  if(time > 5.0f){
+    time = 1.0f;
+  }
+  // END HACK
+
   mCameraPosition = glm::vec3(0.0f, 0.0f, -3.0f);
   mProjectionMatrix = calculateCameraView(mCameraPosition, 1.0f);
-  mModelViewMatrix = calculateModelView(-20.0f, rotation, 0.0f, 5.0f);
+  mModelViewMatrix = m; //calculateModelView(-20.0f, rotation, 0.0f, 5.0f);
 
   // Set up the orientation and camera projection
   glUniformMatrix4fv(mUniformModelView, 1, false, (GLfloat*)glm::value_ptr(mModelViewMatrix));

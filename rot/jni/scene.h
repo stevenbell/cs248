@@ -8,6 +8,9 @@
 #include <glm.hpp>
 #include "model.h"
 
+#include "quaternion.h"
+#include "spline.h"
+
 /* Singleton class representing the scene.
  * This contains handles to the GL resources.
  */
@@ -45,6 +48,12 @@ private:
   glm::vec3 mCameraPosition;
   glm::mat4 mProjectionMatrix;
   glm::mat4 mModelViewMatrix;
+
+
+  // HACK for HW 5
+Spline sX, sY, sZ; // Spline interpolation in each dimension
+Quat startQuat, endQuat;
+
 };
 
 #endif

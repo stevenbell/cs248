@@ -19,7 +19,7 @@ include $(CLEAR_VARS)
 LOCAL_MODULE    := libgl2jni
 LOCAL_CFLAGS    := -Werror
 LOCAL_C_INCLUDES += /usr/include/glm
-LOCAL_SRC_FILES := gl_code.cpp gl_util.cpp jnibridge.cpp level.cpp model.cpp scene.cpp
+LOCAL_SRC_FILES := gl_code.cpp gl_util.cpp jnibridge.cpp level.cpp model.cpp scene.cpp spline.cpp quaternion.cpp
 LOCAL_LDLIBS    := -llog -landroid -lGLESv2
 
 include $(BUILD_SHARED_LIBRARY)
