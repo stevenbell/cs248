@@ -196,35 +196,6 @@ void Model::loadVertexBuffers()
   free(indexArr);
 }
 
-/*
- * Returns true if texturing is enabled (texture coordinates exist and
- * the texture image is valid), false otherwise.
- */
-bool Model::loadTexture(const char* filename)
-{
-  if(mTextureCoords.size() != mVertices.size()) {
-    mUseTexture = false;
-    return false;
-  }
-
-  // TODO: what is returned here?
-  JniBridge::instance()->loadPng(filename);
-
-  // Set up textures
-  glGenTextures(1, &mTextureBuf);
-  glBindTexture(GL_TEXTURE_2D, mTextureBuf);
-
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_CLAMP_TO_EDGE);
-/*
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, mTextureImage->w, mTextureImage->h,
-     0, GL_BGRA, GL_UNSIGNED_BYTE, mTextureImage->pixels);
-*/
-  mUseTexture = true;
-  return mUseTexture;
-}
 
 void Model::render()
 {

@@ -32,7 +32,7 @@ public class AssetLoader {
     {
         int w = bmp.getWidth();
         int h = bmp.getHeight();
-        bmp.getPixels(pixels, 0, w, 0, 0, w, h);
+        bmp.getPixels(pixels, 0, w, 0, 0, w, h); // Pixels, offset, stride, x, y, width, height
     }
 
     public void close(Bitmap bmp)

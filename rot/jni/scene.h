@@ -6,10 +6,13 @@
 
 #define _GLIBCXX_USE_C99_MATH 1
 #include <glm.hpp>
-#include "model.h"
 
-#include "quaternion.h"
-#include "spline.h"
+#include <vector>
+#include "object.h"
+#include "orientation.h"
+
+//#include "quaternion.h"
+//#include "spline.h"
 
 /* Singleton class representing the scene.
  * This contains handles to the GL resources.
@@ -21,16 +24,19 @@ public:
 
   bool setupGraphics(int w, int h);
   void renderFrame(void);
+  void touchEvent(float x, float y); // TODO: move me?
 
 private:
   Scene(void);
+  glm::mat4 calculateCameraView(glm::vec3 cameraPosition, float aspectRatio);
   static Scene* mInstance;
 
-  Model* theBunny;
+  std::vector<Object*> mObjects;
 
   GLuint gProgram;
   GLuint mAttrVertexPosition;
   GLuint mAttrVertexNormal;
+  GLuint mAttrTexCoord;
 
   GLuint mVertexBuffer;
   GLuint mNormalBuffer;
@@ -49,11 +55,8 @@ private:
   glm::mat4 mProjectionMatrix;
   glm::mat4 mModelViewMatrix;
 
-
-  // HACK for HW 5
-Spline sX, sY, sZ; // Spline interpolation in each dimension
-Quat startQuat, endQuat;
-
+  // This clearly isn't part of the scene...
+  Orientation mOrientation;
 };
 
 #endif

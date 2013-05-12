@@ -1,6 +1,10 @@
 #include <android/log.h>
 #include <gtc/matrix_transform.hpp>
 #include <gtc/type_ptr.hpp>
+
+#include "model.h"
+#include "wall.h"
+
 #include "gl_util.h"
 #include "log.h"
 #include "scene.h"
@@ -17,6 +21,7 @@ Scene* Scene::instance(void)
 
 Scene::Scene(void)
 {
+  /*
   FILE* f = fopen("/sdcard/rot/movement.spline", "r");
   float t = 0.0f;
   while(!feof(f)){
@@ -32,6 +37,7 @@ Scene::Scene(void)
   // HACK: hard-code the quaternions here
   // Leave startQuat alone
   endQuat = endQuat.rotate(glm::vec3(1.0f, 1.0f, 0.2f), 2.0f);
+  */
 }
 
 
@@ -43,7 +49,7 @@ bool Scene::setupGraphics(int w, int h) {
     printGLString("Extensions", GL_EXTENSIONS);
 
     // Compile and link the shader program
-    gProgram = createProgram("shaders/world.vert", "shaders/diffuse.frag");
+    gProgram = createProgram("shaders/world.vert", "shaders/dumbtexture.frag");
     if (!gProgram) {
         LOGE("Could not create program.");
         return false;
@@ -59,8 +65,10 @@ bool Scene::setupGraphics(int w, int h) {
 
     mAttrVertexPosition = glGetAttribLocation(gProgram, "vertexPosition");
     mAttrVertexNormal = glGetAttribLocation(gProgram, "vertexNormal");
+    mAttrTexCoord = glGetAttribLocation(gProgram, "vertexTexCoord");
     glEnableVertexAttribArray(mAttrVertexPosition);
     glEnableVertexAttribArray(mAttrVertexNormal);
+    glEnableVertexAttribArray(mAttrTexCoord);
 
     checkGlError("get uniform/attributes locations");
 
@@ -71,9 +79,27 @@ bool Scene::setupGraphics(int w, int h) {
     glViewport(0, 0, w, h);
     checkGlError("glViewport");
 
-    GLuint attributeLocs[] = {mAttrVertexPosition, mAttrVertexNormal, 0};
-    theBunny = new Model("/sdcard/rot/bunny.obj", attributeLocs);
+    GLuint attributeLocs[] = {mAttrVertexPosition, mAttrVertexNormal, mAttrTexCoord};
+    /*
+    Model* theBunny = new Model("/sdcard/rot/bunny.obj", attributeLocs);
+    mObjects.push_back(theBunny);
+    */
 
+    Wall* theWall = new Wall(point3(-5.0f, -2.0f, 0.0f),
+                             point3( 5.0f, -2.0f, 0.0f),
+                             point3(-5.0f, -2.0f, 50.0f),
+                             0.25f, attributeLocs);
+    theWall->loadTexture("textures/mud.png");
+    mObjects.push_back(theWall);
+
+    Wall* anotherWall = new Wall(point3(-5.0f, 2.0f, 0.0f),
+                             point3( 5.0f, 2.0f, 0.0f),
+                             point3( -5.0f, 2.0f, 50.0f),
+                             0.25f, attributeLocs);
+    anotherWall->loadTexture("textures/burlwood.png");
+    mObjects.push_back(anotherWall);
+
+    mCameraPosition = glm::vec3(0.0f, 0.0f, -3.0f);
     return true;
 }
 
@@ -98,16 +124,20 @@ glm::mat4 calculateModelView(float rotX, float rotY, float rotZ, float scale)
   return(m);
 }
 
-glm::mat4 calculateCameraView(glm::vec3 cameraPosition, float aspectRatio)
+glm::mat4 Scene::calculateCameraView(glm::vec3 cameraPosition, float aspectRatio)
 {
   glm::mat4 m(1.0); // Identity matrix
 
   // Translate and then rotate the world relative to the camera
-  m = glm::translate(m, -cameraPosition);
-  m = glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), -cameraPosition, glm::vec3(0.0f, 1.0f, 0.0f)) * m;
+  m = glm::translate(m, glm::vec3(0.0f, 0.0f, -10.0f));
+  // nasty hack
+  //m = glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * m;
+  //m = glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), -cameraPosition, glm::vec3(0.0f, 1.0f, 0.0f)) * m;
+  m = mOrientation.getCameraOrientation() * m;
 
   // Transform scene coordinates to image coordinates
-  m = glm::perspective(45.0f, aspectRatio, 0.1f, 10.0f) * m;
+  // TODO: probably clip nearer
+  m = glm::perspective(45.0f, aspectRatio, 0.5f, 100.0f) * m;
 
   return(m);
 }
@@ -118,6 +148,7 @@ void Scene::renderFrame(void)
   static int rotation;
   rotation = (rotation + 1) % 360;
 
+
   glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
   glClearDepthf(1.0f);
   checkGlError("glClearColor");
@@ -127,25 +158,8 @@ void Scene::renderFrame(void)
   glUseProgram(gProgram);
   checkGlError("glUseProgram");
 
-  // Calculate the orientation and camera matrices
-  // HACK to do animation for HW 5
-  static float time = 1.0f;
-  glm::mat4 m(1.0); // Identity matrix
-
-  m = glm::translate(m, glm::vec3(sX.getValue(time), sY.getValue(time), sZ.getValue(time)));
-
-  Quat rotInterp = Quat::slerp(startQuat, endQuat, (time - 1.0f) / 4.0f);
-  m = m * rotInterp.rotationMatrix();
-
-  time += 0.03f;
-  if(time > 5.0f){
-    time = 1.0f;
-  }
-  // END HACK
-
-  mCameraPosition = glm::vec3(0.0f, 0.0f, -3.0f);
   mProjectionMatrix = calculateCameraView(mCameraPosition, 1.0f);
-  mModelViewMatrix = m; //calculateModelView(-20.0f, rotation, 0.0f, 5.0f);
+  mModelViewMatrix = calculateModelView(0.0f, 0.0f, 0.0f, 1.0f); // TODO: move to individual models
 
   // Set up the orientation and camera projection
   glUniformMatrix4fv(mUniformModelView, 1, false, (GLfloat*)glm::value_ptr(mModelViewMatrix));
@@ -159,7 +173,23 @@ void Scene::renderFrame(void)
   glUniform3fv(mUniformCameraPos, 1, (GLfloat*)glm::value_ptr(mCameraPosition));
   checkGlError("set uniforms");
 
-  // Draw the model
-  theBunny->render();
-  checkGlError("Render model");
+  // Draw the models
+  for(int i = 0; i < mObjects.size(); i++){
+    mObjects[i]->render();
+  }
+  checkGlError("Render models");
 }
+
+void Scene::touchEvent(float x, float y)
+{
+  LOGI("Touch event: %f %f", x, y);
+
+  if(y > 500){
+    mCameraPosition.z = mCameraPosition.z + 0.5f;
+  }
+  else{
+    mCameraPosition.z = mCameraPosition.z - 0.5f;
+  }
+
+}
+

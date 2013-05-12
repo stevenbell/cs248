@@ -3,6 +3,7 @@
 
 #include <jni.h>
 #include <android/asset_manager.h>
+#include "texturehandler.h"
 
 class JniBridge
 {
@@ -11,11 +12,12 @@ public:
   static JniBridge* instance();
 
   // These methods are invoked from the Java side to set up the connection
+  void setEnv(JNIEnv* env);
   void setAssetManager(JNIEnv* env, jobject assetManager);
   void setPngLoader(JNIEnv* env, jobject pngLoader);
 
   // These methods are invoked from the C++ side to retrieve things from the JVM
-  void loadPng(const char* path);
+  Image loadPng(const char* path);
   void loadText(const char* path, char** text);
 
 private:
