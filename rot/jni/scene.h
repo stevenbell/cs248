@@ -57,6 +57,7 @@ private:
 
   // This clearly isn't part of the scene...
   Orientation mOrientation;
+  float mAspectRatio;
 };
 
 #endif

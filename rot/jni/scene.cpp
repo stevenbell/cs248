@@ -79,6 +79,8 @@ bool Scene::setupGraphics(int w, int h) {
     glViewport(0, 0, w, h);
     checkGlError("glViewport");
 
+    mAspectRatio = (float)w / h;
+
     GLuint attributeLocs[] = {mAttrVertexPosition, mAttrVertexNormal, mAttrTexCoord};
     /*
     Model* theBunny = new Model("/sdcard/rot/bunny.obj", attributeLocs);
@@ -158,7 +160,7 @@ void Scene::renderFrame(void)
   glUseProgram(gProgram);
   checkGlError("glUseProgram");
 
-  mProjectionMatrix = calculateCameraView(mCameraPosition, 1.0f);
+  mProjectionMatrix = calculateCameraView(mCameraPosition, mAspectRatio);
   mModelViewMatrix = calculateModelView(0.0f, 0.0f, 0.0f, 1.0f); // TODO: move to individual models
 
   // Set up the orientation and camera projection
