@@ -21,6 +21,26 @@ Scene* Scene::instance(void)
 
 Scene::Scene(void)
 {
+  mWorldRotation = glm::mat4(1.0f); // Identity matrix
+  /* Hrm. This matrix looks familiar...
+  mWorldRotation = glm::mat4(-1.0f, 0.0f,  0.0f, 0.0f,
+                              0.0f, 0.0f,  -1.0f, 0.0f,
+                              0.0f, 1.0f,  0.0f, 0.0f,
+                              0.0f, 0.0f,  0.0f, 1.0f);
+                              */
+
+  // Use this for a "portrait mode" mapping
+  // This makes the GL axes match the world axes, but that's not actually what we want.
+  /*
+  mDeviceAxisMapping = glm::mat4( 0.0f, 1.0f, 0.0f, 0.0f,
+                                  1.0f, 0.0f, 0.0f, 0.0f,
+                                  0.0f, 0.0f, 1.0f, 0.0f,
+                                  0.0f, 0.0f, 0.0f, 1.0f);
+                                  */
+  mDeviceAxisMapping = glm::mat4( 1.0f, 0.0f, 0.0f, 0.0f,
+                                  0.0f, 0.0f, 1.0f, 0.0f,
+                                  0.0f, -1.0f, 0.0f, 0.0f,
+                                  0.0f, 0.0f, 0.0f, 1.0f);
   /*
   FILE* f = fopen("/sdcard/rot/movement.spline", "r");
   float t = 0.0f;
@@ -87,21 +107,50 @@ bool Scene::setupGraphics(int w, int h) {
     mObjects.push_back(theBunny);
     */
 
-    Wall* theWall = new Wall(point3(-5.0f, -2.0f, 0.0f),
-                             point3( 5.0f, -2.0f, 0.0f),
-                             point3(-5.0f, -2.0f, 50.0f),
-                             0.25f, attributeLocs);
-    theWall->loadTexture("textures/mud.png");
-    mObjects.push_back(theWall);
+    // Build a 10x10x10 cube
+    Wall* front = new Wall(point3(-5.0f,  5.0f, -5.0f),
+                           point3( 5.0f,  5.0f, -5.0f),
+                           point3(-5.0f, -5.0f, -5.0f),
+                           0.25f, attributeLocs);
+    front->loadTexture("textures/cube_front.png");
+    mObjects.push_back(front);
 
-    Wall* anotherWall = new Wall(point3(-5.0f, 2.0f, 0.0f),
-                             point3( 5.0f, 2.0f, 0.0f),
-                             point3( -5.0f, 2.0f, 50.0f),
-                             0.25f, attributeLocs);
-    anotherWall->loadTexture("textures/burlwood.png");
-    mObjects.push_back(anotherWall);
+    Wall* back = new Wall(point3(-5.0f,  5.0f, 5.0f),
+                          point3( 5.0f,  5.0f, 5.0f),
+                          point3(-5.0f, -5.0f, 5.0f),
+                          0.25f, attributeLocs);
+    back->loadTexture("textures/cube_back.png");
+    mObjects.push_back(back);
 
-    mCameraPosition = glm::vec3(0.0f, 0.0f, -3.0f);
+    Wall* left = new Wall(point3(-5.0f,  5.0f,  5.0f),
+                          point3(-5.0f,  5.0f, -5.0f),
+                          point3(-5.0f, -5.0f,  5.0f),
+                          0.25f, attributeLocs);
+    left->loadTexture("textures/cube_left.png");
+    mObjects.push_back(left);
+
+    Wall* right = new Wall(point3(5.0f,  5.0f,  5.0f),
+                           point3(5.0f,  5.0f, -5.0f),
+                           point3(5.0f, -5.0f,  5.0f),
+                           0.25f, attributeLocs);
+    right->loadTexture("textures/cube_right.png");
+    mObjects.push_back(right);
+
+    Wall* top = new Wall(point3(-5.0f, 5.0f,  5.0f),
+                         point3( 5.0f, 5.0f,  5.0f),
+                         point3(-5.0f, 5.0f, -5.0f),
+                         0.25f, attributeLocs);
+    top->loadTexture("textures/mud.png");
+    mObjects.push_back(top);
+
+    Wall* bottom = new Wall(point3(-5.0f, -5.0f,  5.0f),
+                            point3( 5.0f, -5.0f,  5.0f),
+                            point3(-5.0f, -5.0f, -5.0f),
+                            0.25f, attributeLocs);
+    bottom->loadTexture("textures/burlwood.png");
+    mObjects.push_back(bottom);
+
+    mCameraPosition = glm::vec3(0.0f, 0.0f, 0.0f);
     return true;
 }
 
@@ -131,15 +180,53 @@ glm::mat4 Scene::calculateCameraView(glm::vec3 cameraPosition, float aspectRatio
   glm::mat4 m(1.0); // Identity matrix
 
   // Translate and then rotate the world relative to the camera
-  m = glm::translate(m, glm::vec3(0.0f, 0.0f, -10.0f));
-  // nasty hack
-  //m = glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 1.0f, 0.0f)) * m;
-  //m = glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), -cameraPosition, glm::vec3(0.0f, 1.0f, 0.0f)) * m;
-  m = mOrientation.getCameraOrientation() * m;
+  m = glm::translate(m, glm::vec3(0.0f, 0.0f, 0.0f)); // TODO: replace with mCameraPosition
 
+  glm::mat4 r = mOrientation.getCameraOrientation();
+
+  // The device axes are specified to be +X is right, +Y is top, and +Z is out the screen
+  // World axes are +X is east, +Y is north, and +Z is toward the sky.
+
+  // To produce the viewing axis, I want the components to the world matrix in the
+  // direction of -Z (into the screen).  This is the third row of the matrix.
+  //glm::vec4 earthLookPoint = glm::transpose(r) * glm::vec4(0.0f, 0.0f, 1.0f, 0.0f);
+  //LOGI("earth look point: %f %f %f", earthLookPoint.x, earthLookPoint.y, earthLookPoint.z);
+
+  // Now we have to match the real world coordinates to the GL world coordinates.
+
+  // The world rotation matrix represents the current rotation of the world,
+  // which is only modified when the device is "twisted" around the device
+  // Z-axis.  The world rotation is used to calculate the direction of gravity
+
+  // When the device rotates, we can get the Z-axis twist from the gyro
+  // The view axis is given by the orientation
+  // So we're just rotating a matrix by an axis and angle
+
+  // Swizzle the world coordinates to match the GL scene coordinates
+  // glm::vec4 sceneLookPoint = glm::vec4(-earthLookPoint.x, -earthLookPoint.z, earthLookPoint.y, 1.0f);
+  //glm::vec4 sceneLookPoint = mWorldRotation * glm::transpose(r) * glm::vec4(0.0f, 0.0f, 1.0f, 0.0f);
+
+  // Multiply by the world rotation matrix to find the axis
+  //glm::vec4 sceneAxis = sceneLookPoint; //mWorldRotation * sceneLookPoint;
+  //LOGI("scene look point: %f %f %f", sceneLookPoint.x, sceneLookPoint.y, sceneLookPoint.z);
+
+  // Hack to do this once for touch events:
+  if(mDoRotation){
+    mWorldRotation = glm::rotate(mWorldRotation, 90.0f, glm::vec3(0.0f, 0.0f, 1.0f));
+    mDoRotation = false;
+  }
+/*
+  m = m * glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f),
+                  glm::vec3(sceneLookPoint.x, sceneLookPoint.y, sceneLookPoint.z),
+                  glm::vec3(0.0f, 1.0f, 0.0f));
+
+  m = m * mWorldRotation; // Rotate the world
+*/
   // Transform scene coordinates to image coordinates
   // TODO: probably clip nearer
-  m = glm::perspective(45.0f, aspectRatio, 0.5f, 100.0f) * m;
+  //m = glm::perspective(90.0f, aspectRatio, 0.5f, 100.0f) * mDeviceAxisMapping * r;
+  m = glm::perspective(90.0f, aspectRatio, 0.5f, 100.0f) * r * mDeviceAxisMapping * mWorldRotation;
+  //m = glm::perspective(90.0f, aspectRatio, 0.5f, 100.0f) * r;
 
   return(m);
 }
@@ -185,13 +272,16 @@ void Scene::renderFrame(void)
 void Scene::touchEvent(float x, float y)
 {
   LOGI("Touch event: %f %f", x, y);
-
+/*
   if(y > 500){
     mCameraPosition.z = mCameraPosition.z + 0.5f;
   }
   else{
     mCameraPosition.z = mCameraPosition.z - 0.5f;
   }
+*/
 
+  //mWorldRotation = glm::rotate(mWorldRotation, 45.0f, glm::vec3(0.0f, 0.0f, 1.0f));
+  mDoRotation = true;
 }
 

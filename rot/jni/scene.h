@@ -57,6 +57,11 @@ private:
 
   // This clearly isn't part of the scene...
   Orientation mOrientation;
+  glm::mat4 mWorldRotation;
+  glm::mat4 mDeviceAxisMapping;
+
+  // HACK:
+  bool mDoRotation;
   float mAspectRatio;
 };
 

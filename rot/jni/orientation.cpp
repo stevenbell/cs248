@@ -34,10 +34,10 @@ void Orientation::updateOrientation()
   if(ASensorEventQueue_hasEvents(mSensorEventQueue) > 0){
     while(ASensorEventQueue_hasEvents(mSensorEventQueue) > 0){
       ASensorEventQueue_getEvents(mSensorEventQueue, &e, 1);
-      LOGI("Sensor: %f %f %f %f", e.data[3], e.data[0], e.data[1], e.data[2]);
+      //LOGI("Sensor: %f %f %f %f", e.data[3], e.data[0], e.data[1], e.data[2]);
     }
     mQuat = Quat(e.data[3], e.data[0], e.data[1], e.data[2]);
-    LOGI("Done, setting.");
+    //LOGI("Done, setting.");
   }
 }
 

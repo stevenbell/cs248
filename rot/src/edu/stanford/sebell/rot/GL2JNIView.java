@@ -93,7 +93,9 @@ class GL2JNIView extends GLSurfaceView {
     
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        GL2JNILib.touchEvent(event.getX(), event.getY());
+        if(event.getAction() == MotionEvent.ACTION_DOWN){
+            GL2JNILib.touchEvent(event.getX(), event.getY());
+        }
         return(true); 
     };
 
