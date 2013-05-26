@@ -1,7 +1,7 @@
 #include "gl_util.h"
 #include "wall.h"
 
-Wall::Wall(point3 a, point3 b, point3 c, GLfloat thickness, GLuint attributeLocs[3])
+Wall::Wall(point3 a, point3 b, point3 c, GLfloat thickness)
 {
   // First, peg the two points we know
   mVertices[0] = a.x; mVertices[1] = a.y; mVertices[2] = a.z;
@@ -25,15 +25,11 @@ Wall::Wall(point3 a, point3 b, point3 c, GLfloat thickness, GLuint attributeLocs
   GLfloat texCoords[8] = {0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f};
 
   // Set up OpenGL stuff
-  // Copy the handles to the shader attributes
-  mAttributeLocations[VERTEX] = attributeLocs[VERTEX];
-  mAttributeLocations[NORMAL] = attributeLocs[NORMAL];
-  mAttributeLocations[TEXTURE] = attributeLocs[TEXTURE];
-
   // Create buffer handles for all of our vertex attribute buffers
   glGenBuffers(4, mAttributeBuffers);
   glEnableVertexAttribArray(mAttributeBuffers[VERTEX]);
   glEnableVertexAttribArray(mAttributeBuffers[NORMAL]);
+  // Shouldn't we enable texture here too?
   glEnableVertexAttribArray(mAttributeBuffers[INDEX]);
 
   glBindBuffer(GL_ARRAY_BUFFER, mAttributeBuffers[VERTEX]);
@@ -50,20 +46,22 @@ Wall::Wall(point3 a, point3 b, point3 c, GLfloat thickness, GLuint attributeLocs
   checkGlError("Wall::Wall finished");
 }
 
-void Wall::render()
+void Wall::subrender(RenderContext c)
 {
   glBindBuffer(GL_ARRAY_BUFFER, mAttributeBuffers[VERTEX]);
-  glVertexAttribPointer(mAttributeLocations[VERTEX], 3, GL_FLOAT, GL_FALSE, 0, 0); // Note that '3' is coords/vertex, not a count
+  glVertexAttribPointer(c.attrVertexPosition, 3, GL_FLOAT, GL_FALSE, 0, 0); // Note that '3' is coords/vertex, not a count
 
   glBindBuffer(GL_ARRAY_BUFFER, mAttributeBuffers[NORMAL]);
-  glVertexAttribPointer(mAttributeLocations[NORMAL], 3, GL_FLOAT, GL_TRUE, 0, 0); // Normalize the normals
+  glVertexAttribPointer(c.attrVertexNormal, 3, GL_FLOAT, GL_TRUE, 0, 0); // Normalize the normals
 
+  // TODO: If we don't take this path, the code crashes when we try to draw
+  // This is because there's nothing in the texture array, but the shader needs stuff.
   if(mUseTexture){
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, mTextureBuf);
 
     glBindBuffer(GL_ARRAY_BUFFER, mAttributeBuffers[TEXTURE]);
-    glVertexAttribPointer(mAttributeLocations[TEXTURE], 2, GL_FLOAT, GL_FALSE, 0, 0);
+    glVertexAttribPointer(c.attrTexCoord, 2, GL_FLOAT, GL_FALSE, 0, 0);
   }
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mAttributeBuffers[INDEX]);

@@ -5,20 +5,40 @@
 #include "texturehandler.h"
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
+#include <glm.hpp>
+#include <vector>
 
-class RenderContext
+struct RenderContext
 {
+  // Shader uniform handles
+  GLuint uniformModelView;
+  GLuint uniformProjection;
+  GLuint uniformLightPos;
+  GLuint uniformCameraPos;
 
-
+  // Shader attribute handles
+  GLuint attrVertexPosition;
+  GLuint attrVertexNormal;
+  GLuint attrTexCoord;
 };
 
 class Object
 {
 public:
+  Object();
   bool loadTexture(const char* filename);
-  virtual void render() = 0;
+  const glm::mat4& positionMatrix() { return mPosition; };
+  void applyGravity(const glm::vec4 gravity, const std::vector<Object*> &fixedObjects, float dt);
+  void render(RenderContext c);
 
 protected:
+  virtual void subrender(RenderContext c) = 0;
+
+  // These things apply only to dynamic objects and might be better off in a
+  // subclass or interface
+  glm::mat4 mPosition; // Position and orientation of the object (model view matrix)
+  glm::vec4 mVelocity;
+
   Image mTextureImage;
   bool mUseTexture;
   GLuint mTextureBuf;

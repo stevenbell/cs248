@@ -24,7 +24,6 @@ public class IntroFrag extends Fragment {
 			@Override
 			public void onClick(View v) {
 				startButton.setText("Again!");
-				GL2JNILib.loadLevel("Level 0");
 				parent.startGame();
 			}
 		});

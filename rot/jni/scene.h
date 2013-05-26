@@ -22,7 +22,9 @@ class Scene
 public:
   static Scene* instance(void);
 
+  bool load(const char* path);
   bool setupGraphics(int w, int h);
+  void update(void);
   void renderFrame(void);
   void touchEvent(float x, float y); // TODO: move me?
 
@@ -31,21 +33,17 @@ private:
   glm::mat4 calculateCameraView(glm::vec3 cameraPosition, float aspectRatio);
   static Scene* mInstance;
 
-  std::vector<Object*> mObjects;
+  bool mGraphicsConfigured; // True once the graphics context is set up and shaders are loaded
+
+  std::vector<Object*> mStaticObjects; // Things which are fixed in the world (which we can collide with)
+  std::vector<Object*> mDynamicObjects; // Things which move (i.e, are updated by physics)
 
   GLuint gProgram;
-  GLuint mAttrVertexPosition;
-  GLuint mAttrVertexNormal;
-  GLuint mAttrTexCoord;
 
   GLuint mVertexBuffer;
   GLuint mNormalBuffer;
 
-  // Shader uniform handles
-  GLuint mUniformModelView;
-  GLuint mUniformProjection;
-  GLuint mUniformLightPos;
-  GLuint mUniformCameraPos;
+  RenderContext mContext;
 
   GLuint mUniformAmbient;
   GLuint mUniformDiffuse;
@@ -59,6 +57,9 @@ private:
   Orientation mOrientation;
   glm::mat4 mWorldRotation;
   glm::mat4 mDeviceAxisMapping;
+
+  // This should live in a more general place
+  const static GLfloat IDENTITY_MATRIX_4[16];
 
   // HACK:
   bool mDoRotation;

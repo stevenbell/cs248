@@ -11,6 +11,11 @@
 
 Scene* Scene::mInstance = 0;
 
+const GLfloat Scene::IDENTITY_MATRIX_4[16] = {1.0f, 0.0f, 0.0f, 0.0f,
+                                              0.0f, 1.0f, 0.0f, 0.0f,
+                                              0.0f, 0.0f, 1.0f, 0.0f,
+                                              0.0f, 0.0f, 0.0f, 1.0f};
+
 Scene* Scene::instance(void)
 {
   if(!mInstance){
@@ -20,6 +25,7 @@ Scene* Scene::instance(void)
 }
 
 Scene::Scene(void)
+  : mGraphicsConfigured(false)
 {
   mWorldRotation = glm::mat4(1.0f); // Identity matrix
   /* Hrm. This matrix looks familiar...
@@ -58,6 +64,8 @@ Scene::Scene(void)
   // Leave startQuat alone
   endQuat = endQuat.rotate(glm::vec3(1.0f, 1.0f, 0.2f), 2.0f);
   */
+
+    mCameraPosition = glm::vec3(0.0f, 0.0f, 0.0f);
 }
 
 
@@ -76,19 +84,19 @@ bool Scene::setupGraphics(int w, int h) {
     }
 
     // Retrieve handles for all the uniforms and attributes
-    mUniformModelView = glGetUniformLocation(gProgram, "modelViewMatrix");
-    mUniformProjection = glGetUniformLocation(gProgram, "projectionMatrix");
-    mUniformLightPos = glGetUniformLocation(gProgram, "lightPosition");
-    mUniformCameraPos = glGetUniformLocation(gProgram, "viewPosition");
+    mContext.uniformModelView = glGetUniformLocation(gProgram, "modelViewMatrix");
+    mContext.uniformProjection = glGetUniformLocation(gProgram, "projectionMatrix");
+    mContext.uniformLightPos = glGetUniformLocation(gProgram, "lightPosition");
+    mContext.uniformCameraPos = glGetUniformLocation(gProgram, "viewPosition");
     mUniformAmbient = glGetUniformLocation(gProgram, "ambientColor");
     mUniformDiffuse = glGetUniformLocation(gProgram, "diffuseColor");
 
-    mAttrVertexPosition = glGetAttribLocation(gProgram, "vertexPosition");
-    mAttrVertexNormal = glGetAttribLocation(gProgram, "vertexNormal");
-    mAttrTexCoord = glGetAttribLocation(gProgram, "vertexTexCoord");
-    glEnableVertexAttribArray(mAttrVertexPosition);
-    glEnableVertexAttribArray(mAttrVertexNormal);
-    glEnableVertexAttribArray(mAttrTexCoord);
+    mContext.attrVertexPosition = glGetAttribLocation(gProgram, "vertexPosition");
+    mContext.attrVertexNormal = glGetAttribLocation(gProgram, "vertexNormal");
+    mContext.attrTexCoord = glGetAttribLocation(gProgram, "vertexTexCoord");
+    glEnableVertexAttribArray(mContext.attrVertexPosition);
+    glEnableVertexAttribArray(mContext.attrVertexNormal);
+    glEnableVertexAttribArray(mContext.attrTexCoord);
 
     checkGlError("get uniform/attributes locations");
 
@@ -101,56 +109,7 @@ bool Scene::setupGraphics(int w, int h) {
 
     mAspectRatio = (float)w / h;
 
-    GLuint attributeLocs[] = {mAttrVertexPosition, mAttrVertexNormal, mAttrTexCoord};
-    /*
-    Model* theBunny = new Model("/sdcard/rot/bunny.obj", attributeLocs);
-    mObjects.push_back(theBunny);
-    */
-
-    // Build a 10x10x10 cube
-    Wall* front = new Wall(point3(-5.0f,  5.0f, -5.0f),
-                           point3( 5.0f,  5.0f, -5.0f),
-                           point3(-5.0f, -5.0f, -5.0f),
-                           0.25f, attributeLocs);
-    front->loadTexture("textures/cube_front.png");
-    mObjects.push_back(front);
-
-    Wall* back = new Wall(point3(-5.0f,  5.0f, 5.0f),
-                          point3( 5.0f,  5.0f, 5.0f),
-                          point3(-5.0f, -5.0f, 5.0f),
-                          0.25f, attributeLocs);
-    back->loadTexture("textures/cube_back.png");
-    mObjects.push_back(back);
-
-    Wall* left = new Wall(point3(-5.0f,  5.0f,  5.0f),
-                          point3(-5.0f,  5.0f, -5.0f),
-                          point3(-5.0f, -5.0f,  5.0f),
-                          0.25f, attributeLocs);
-    left->loadTexture("textures/cube_left.png");
-    mObjects.push_back(left);
-
-    Wall* right = new Wall(point3(5.0f,  5.0f,  5.0f),
-                           point3(5.0f,  5.0f, -5.0f),
-                           point3(5.0f, -5.0f,  5.0f),
-                           0.25f, attributeLocs);
-    right->loadTexture("textures/cube_right.png");
-    mObjects.push_back(right);
-
-    Wall* top = new Wall(point3(-5.0f, 5.0f,  5.0f),
-                         point3( 5.0f, 5.0f,  5.0f),
-                         point3(-5.0f, 5.0f, -5.0f),
-                         0.25f, attributeLocs);
-    top->loadTexture("textures/mud.png");
-    mObjects.push_back(top);
-
-    Wall* bottom = new Wall(point3(-5.0f, -5.0f,  5.0f),
-                            point3( 5.0f, -5.0f,  5.0f),
-                            point3(-5.0f, -5.0f, -5.0f),
-                            0.25f, attributeLocs);
-    bottom->loadTexture("textures/burlwood.png");
-    mObjects.push_back(bottom);
-
-    mCameraPosition = glm::vec3(0.0f, 0.0f, 0.0f);
+    mGraphicsConfigured = true;
     return true;
 }
 
@@ -158,6 +117,7 @@ bool Scene::setupGraphics(int w, int h) {
  * The orientation is specified in terms of euler angles.
  * The mesh is centered and scaled based on its extents.
  * Note that following GL conventions, the angles are in degrees, not radians */
+/*
 glm::mat4 calculateModelView(float rotX, float rotY, float rotZ, float scale)
 {
   //Extents e = model->extents();
@@ -174,6 +134,7 @@ glm::mat4 calculateModelView(float rotX, float rotY, float rotZ, float scale)
 
   return(m);
 }
+*/
 
 glm::mat4 Scene::calculateCameraView(glm::vec3 cameraPosition, float aspectRatio)
 {
@@ -189,7 +150,7 @@ glm::mat4 Scene::calculateCameraView(glm::vec3 cameraPosition, float aspectRatio
 
   // To produce the viewing axis, I want the components to the world matrix in the
   // direction of -Z (into the screen).  This is the third row of the matrix.
-  //glm::vec4 earthLookPoint = glm::transpose(r) * glm::vec4(0.0f, 0.0f, 1.0f, 0.0f);
+  glm::vec4 earthLookPoint = glm::transpose(r) * glm::vec4(0.0f, 0.0f, 1.0f, 0.0f);
   //LOGI("earth look point: %f %f %f", earthLookPoint.x, earthLookPoint.y, earthLookPoint.z);
 
   // Now we have to match the real world coordinates to the GL world coordinates.
@@ -203,8 +164,8 @@ glm::mat4 Scene::calculateCameraView(glm::vec3 cameraPosition, float aspectRatio
   // So we're just rotating a matrix by an axis and angle
 
   // Swizzle the world coordinates to match the GL scene coordinates
-  // glm::vec4 sceneLookPoint = glm::vec4(-earthLookPoint.x, -earthLookPoint.z, earthLookPoint.y, 1.0f);
-  //glm::vec4 sceneLookPoint = mWorldRotation * glm::transpose(r) * glm::vec4(0.0f, 0.0f, 1.0f, 0.0f);
+  //glm::vec4 sceneLookPoint = glm::vec4(-earthLookPoint.x, -earthLookPoint.z, earthLookPoint.y, 1.0f);
+  glm::vec4 sceneLookPoint = mWorldRotation * glm::transpose(r) * glm::vec4(0.0f, 0.0f, 1.0f, 0.0f);
 
   // Multiply by the world rotation matrix to find the axis
   //glm::vec4 sceneAxis = sceneLookPoint; //mWorldRotation * sceneLookPoint;
@@ -225,19 +186,97 @@ glm::mat4 Scene::calculateCameraView(glm::vec3 cameraPosition, float aspectRatio
   // Transform scene coordinates to image coordinates
   // TODO: probably clip nearer
   //m = glm::perspective(90.0f, aspectRatio, 0.5f, 100.0f) * mDeviceAxisMapping * r;
-  m = glm::perspective(90.0f, aspectRatio, 0.5f, 100.0f) * r * mDeviceAxisMapping * mWorldRotation;
+  m = glm::perspective(105.0f, aspectRatio, 0.5f, 100.0f) * r * mDeviceAxisMapping * mWorldRotation;
   //m = glm::perspective(90.0f, aspectRatio, 0.5f, 100.0f) * r;
 
   return(m);
 }
 
+/* Loads a scene from a file.  The path should be to an asset text file, not
+ * a hard path in the filesystem.  Returns true on success.  */
+bool Scene::load(const char* path)
+{
+  // If the graphics context doesn't exist yet, nothing here will work right.
+  assert(mGraphicsConfigured);
+
+    Model* theBox = new Model("/sdcard/rot/cube.obj");
+    theBox->loadTexture("textures/burlwood.png");
+    mDynamicObjects.push_back(theBox);
+
+    /*
+    Model* theBunny = new Model("/sdcard/rot/bunny.obj", attributeLocs);
+    mMovingObjects.push_back(theBunny);
+    */
+
+    // Build a 10x10x10 cube
+    Wall* front = new Wall(point3(-5.0f,  5.0f, -5.0f),
+                           point3( 5.0f,  5.0f, -5.0f),
+                           point3(-5.0f, -5.0f, -5.0f),
+                           0.25f);
+    front->loadTexture("textures/cube_front.png");
+    mStaticObjects.push_back(front);
+
+    Wall* back = new Wall(point3(-5.0f,  5.0f, 5.0f),
+                          point3( 5.0f,  5.0f, 5.0f),
+                          point3(-5.0f, -5.0f, 5.0f),
+                          0.25f);
+    back->loadTexture("textures/cube_back.png");
+    mStaticObjects.push_back(back);
+
+    Wall* left = new Wall(point3(-5.0f,  5.0f,  5.0f),
+                          point3(-5.0f,  5.0f, -5.0f),
+                          point3(-5.0f, -5.0f,  5.0f),
+                          0.25f);
+    left->loadTexture("textures/cube_left.png");
+    mStaticObjects.push_back(left);
+
+    Wall* right = new Wall(point3(5.0f,  5.0f,  5.0f),
+                           point3(5.0f,  5.0f, -5.0f),
+                           point3(5.0f, -5.0f,  5.0f),
+                           0.25f);
+    right->loadTexture("textures/cube_right.png");
+    mStaticObjects.push_back(right);
+
+    Wall* top = new Wall(point3(-5.0f, 5.0f,  5.0f),
+                         point3( 5.0f, 5.0f,  5.0f),
+                         point3(-5.0f, 5.0f, -5.0f),
+                         0.25f);
+    top->loadTexture("textures/mud.png");
+    mStaticObjects.push_back(top);
+
+    Wall* bottom = new Wall(point3(-5.0f, -5.0f,  5.0f),
+                            point3( 5.0f, -5.0f,  5.0f),
+                            point3(-5.0f, -5.0f, -5.0f),
+                            0.25f);
+    bottom->loadTexture("textures/burlwood.png");
+    mStaticObjects.push_back(bottom);
+}
+
+
+/* Updates all of the positions, etc. */
+void Scene::update()
+{
+  float dt = 0.06; // Time differential, in seconds TODO: calculate, don't hardcode
+
+  // Move the character
+
+  // Update particle system
+
+  // Apply gravity/physics to movable objects and detect collisions
+  glm::vec4 gravity = mWorldRotation * glm::vec4(0.0f, -1.0f, 0.0f, 0.0f);
+  LOGI("Gravity: %f  %f  %f", gravity.x, gravity.y, gravity.z);
+  for(int i = 0; i < mDynamicObjects.size(); i++){
+    mDynamicObjects[i]->applyGravity(gravity, mStaticObjects, dt);
+  }
+
+
+  // Check if the level is complete
+
+  // Check if the player died
+}
 
 void Scene::renderFrame(void)
 {
-  static int rotation;
-  rotation = (rotation + 1) % 360;
-
-
   glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
   glClearDepthf(1.0f);
   checkGlError("glClearColor");
@@ -247,26 +286,33 @@ void Scene::renderFrame(void)
   glUseProgram(gProgram);
   checkGlError("glUseProgram");
 
+  // Set up the camera projection matrix
   mProjectionMatrix = calculateCameraView(mCameraPosition, mAspectRatio);
-  mModelViewMatrix = calculateModelView(0.0f, 0.0f, 0.0f, 1.0f); // TODO: move to individual models
-
-  // Set up the orientation and camera projection
-  glUniformMatrix4fv(mUniformModelView, 1, false, (GLfloat*)glm::value_ptr(mModelViewMatrix));
-  glUniformMatrix4fv(mUniformProjection, 1, false, (GLfloat*)glm::value_ptr(mProjectionMatrix));
+  glUniformMatrix4fv(mContext.uniformProjection, 1, false, (GLfloat*)glm::value_ptr(mProjectionMatrix));
 
   // Set up the lighting
   glUniform4f(mUniformAmbient, 0.0f, 0.1f, 0.3f, 1.0f);
   glUniform4f(mUniformDiffuse, 0.8f, 0.0f, 0.0f, 1.0f);
   //glUniform4f(specularUniform, 1.0f, 1.0f, 1.0f, 1.0f);
-  glUniform4f(mUniformLightPos, -3.0f, 3.0f, 0.0f, 1.0f);
-  glUniform3fv(mUniformCameraPos, 1, (GLfloat*)glm::value_ptr(mCameraPosition));
+  glUniform4f(mContext.uniformLightPos, -3.0f, 3.0f, 0.0f, 1.0f);
+  glUniform3fv(mContext.uniformCameraPos, 1, (GLfloat*)glm::value_ptr(mCameraPosition));
   checkGlError("set uniforms");
 
-  // Draw the models
-  for(int i = 0; i < mObjects.size(); i++){
-    mObjects[i]->render();
+  // Draw the objects in the scene
+  for(int i = 0; i < mDynamicObjects.size(); i++){
+    glUniformMatrix4fv(mContext.uniformModelView, 1, false,
+        (GLfloat*)glm::value_ptr(mDynamicObjects[i]->positionMatrix()));
+    mDynamicObjects[i]->render(mContext);
   }
-  checkGlError("Render models");
+  checkGlError("Render dynamic objects");
+
+  // Set the identity matrix and render all of the fixed objects
+  glUniformMatrix4fv(mContext.uniformModelView, 1, false, IDENTITY_MATRIX_4);
+  for(int i = 0; i < mStaticObjects.size(); i++){
+    mStaticObjects[i]->render(mContext);
+  }
+  checkGlError("Render static objects");
+
 }
 
 void Scene::touchEvent(float x, float y)

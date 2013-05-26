@@ -2,5 +2,12 @@ name: Level 1
 difficulty: easy
 author: Steven Bell
 email: sebell@stanford.edu
-size: 50 100 2
 start: 25 10 2
+finish: 25 10 2
+
+wall:
+wall:
+wall:
+wall:
+wall:
+wall:

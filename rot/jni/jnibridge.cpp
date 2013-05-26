@@ -120,42 +120,43 @@ void JniBridge::loadText(const char* path, char** text)
 }
 
 extern "C" {
-    JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_GL2JNILib_init(JNIEnv * env, jobject obj,  jint width, jint height);
-    JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_GL2JNILib_loadLevel(JNIEnv * env, jobject obj, jstring levelName);
-    JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_GL2JNILib_step(JNIEnv * env, jobject obj);
-    JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_GL2JNILib_setPngLoader(JNIEnv * env, jobject obj, jobject loader);
-    JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_GL2JNILib_setAssetManager(JNIEnv * env, jobject obj, jobject am);
-    JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_GL2JNILib_touchEvent(JNIEnv * env, jobject obj,  jfloat x, jfloat y);
+    JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_JniBridge_init(JNIEnv * env, jobject obj,  jint width, jint height);
+    JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_JniBridge_loadLevel(JNIEnv * env, jobject obj, jstring levelName);
+    JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_JniBridge_step(JNIEnv * env, jobject obj);
+    JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_JniBridge_setPngLoader(JNIEnv * env, jobject obj, jobject loader);
+    JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_JniBridge_setAssetManager(JNIEnv * env, jobject obj, jobject am);
+    JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_JniBridge_touchEvent(JNIEnv * env, jobject obj,  jfloat x, jfloat y);
 };
 
-JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_GL2JNILib_init(JNIEnv * env, jobject obj,  jint width, jint height)
+JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_JniBridge_init(JNIEnv * env, jobject obj,  jint width, jint height)
 {
     // This is (probably) the first method called, so register the global environment
     JniBridge::instance()->setEnv(env);
     Scene::instance()->setupGraphics(width, height);
 }
 
-JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_GL2JNILib_loadLevel(JNIEnv * env, jobject obj, jstring levelName)
+JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_JniBridge_loadLevel(JNIEnv * env, jobject obj, jstring levelName)
 {
-    loadLevel(env->GetStringUTFChars(levelName, 0));
+    Scene::instance()->load(env->GetStringUTFChars(levelName, 0));
 }
 
-JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_GL2JNILib_step(JNIEnv * env, jobject obj)
+JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_JniBridge_step(JNIEnv * env, jobject obj)
 {
+    Scene::instance()->update(); // TODO: better multithread this!
     Scene::instance()->renderFrame();
 }
 
-JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_GL2JNILib_setAssetManager(JNIEnv * env, jobject obj, jobject am)
+JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_JniBridge_setAssetManager(JNIEnv * env, jobject obj, jobject am)
 {
     JniBridge::instance()->setAssetManager(env, am);
 }
 
-JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_GL2JNILib_setPngLoader(JNIEnv * env, jobject obj, jobject loader)
+JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_JniBridge_setPngLoader(JNIEnv * env, jobject obj, jobject loader)
 {
     JniBridge::instance()->setPngLoader(env, loader);
 }
 
-JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_GL2JNILib_touchEvent(JNIEnv * env, jobject obj,  jfloat x, jfloat y)
+JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_JniBridge_touchEvent(JNIEnv * env, jobject obj,  jfloat x, jfloat y)
 {
   Scene::instance()->touchEvent(x, y);
   //JniBridge::instance()->loadPng("textures/mud.png");

@@ -19,7 +19,6 @@ package edu.stanford.sebell.rot;
 import android.content.Context;
 import android.graphics.PixelFormat;
 import android.opengl.GLSurfaceView;
-import android.util.AttributeSet;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
@@ -94,7 +93,7 @@ class GL2JNIView extends GLSurfaceView {
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         if(event.getAction() == MotionEvent.ACTION_DOWN){
-            GL2JNILib.touchEvent(event.getX(), event.getY());
+            JniBridge.touchEvent(event.getX(), event.getY());
         }
         return(true); 
     };
@@ -317,11 +316,12 @@ class GL2JNIView extends GLSurfaceView {
 
     private static class Renderer implements GLSurfaceView.Renderer {
         public void onDrawFrame(GL10 gl) {
-            GL2JNILib.step();
+            JniBridge.step();
         }
 
         public void onSurfaceChanged(GL10 gl, int width, int height) {
-            GL2JNILib.init(width, height);
+            JniBridge.init(width, height); // TODO: surfaceChanged isn't really the right method here...
+			JniBridge.loadLevel("levels/01/level.dat"); // TODO: parameterize this
         }
 
         public void onSurfaceCreated(GL10 gl, EGLConfig config) {

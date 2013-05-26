@@ -20,9 +20,9 @@ struct Extents {
 class Model : public Object
 {
 public:
-  Model(const char* filename, GLuint attributeLocs[3]);
+  Model(const char* filename);
 
-  virtual void render();
+  virtual void subrender(RenderContext c);
   void toggleFlatShading() { mFlatShading = !mFlatShading; };
   Extents extents() { return mExtents; }
 
@@ -42,10 +42,7 @@ private:
   std::vector<point3> mTextureCoords;
   Extents mExtents;
 
-
   GLuint mAttributeBuffers[N_VERTEX_BUFFERS];
-  GLuint mAttributeLocations[3];
-
 };
 
 #endif

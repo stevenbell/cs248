@@ -10,7 +10,7 @@
 #include "model.h"
 
 
-Model::Model(const char* filename, GLuint attributeLocs[3])
+Model::Model(const char* filename)
 {
   char lineBuf[1024];
 
@@ -82,11 +82,6 @@ Model::Model(const char* filename, GLuint attributeLocs[3])
     calculateVertexNormals();
   }
 
-  // Copy the handles to the shader attributes
-  mAttributeLocations[VERTEX] = attributeLocs[VERTEX];
-  mAttributeLocations[NORMAL] = attributeLocs[NORMAL];
-  mAttributeLocations[TEXTURE] = attributeLocs[TEXTURE];
-
   // Create buffer handles for all of our vertex attribute buffers
   glGenBuffers(4, mAttributeBuffers);
 
@@ -153,6 +148,7 @@ void Model::loadVertexBuffers()
 {
   glEnableVertexAttribArray(mAttributeBuffers[VERTEX]);
   glEnableVertexAttribArray(mAttributeBuffers[NORMAL]);
+  glEnableVertexAttribArray(mAttributeBuffers[TEXTURE]);
   glEnableVertexAttribArray(mAttributeBuffers[INDEX]);
 
   int arrSize = sizeof(float) * 3 * mVertices.size();
@@ -175,7 +171,9 @@ void Model::loadVertexBuffers()
   glBindBuffer(GL_ARRAY_BUFFER, mAttributeBuffers[NORMAL]);
   glBufferData(GL_ARRAY_BUFFER, arrSize, normalArr, GL_STATIC_DRAW);
 
-  // TODO: once we have textures
+  // TODO: Do this right, and use real texture coordinates
+  glBindBuffer(GL_ARRAY_BUFFER, mAttributeBuffers[TEXTURE]);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*2*mVertices.size(), vertexArr, GL_STATIC_DRAW);
 
   int indexSize = sizeof(GLushort) * 3 * mTriangles.size();
   GLushort* indexArr = (GLushort*)malloc(indexSize);
@@ -187,8 +185,6 @@ void Model::loadVertexBuffers()
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mAttributeBuffers[INDEX]);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexSize, indexArr, GL_STATIC_DRAW);
-  //glBindBuffer(GL_ARRAY_BUFFER, mAttributeBuffers[INDEX]);
-  //glBufferData(GL_ARRAY_BUFFER, indexSize, indexArr, GL_STATIC_DRAW);
 
   // The data is now on the GPU, so we don't need it anymore
   free(vertexArr);
@@ -197,13 +193,20 @@ void Model::loadVertexBuffers()
 }
 
 
-void Model::render()
+void Model::subrender(RenderContext c)
 {
   glBindBuffer(GL_ARRAY_BUFFER, mAttributeBuffers[VERTEX]);
-  glVertexAttribPointer(mAttributeLocations[VERTEX], 3, GL_FLOAT, GL_FALSE, 0, 0); // Note that '3' is coords/vertex, not a count
+  glVertexAttribPointer(c.attrVertexPosition, 3, GL_FLOAT, GL_FALSE, 0, 0); // Note that '3' is coords/vertex, not a count
     
   glBindBuffer(GL_ARRAY_BUFFER, mAttributeBuffers[NORMAL]);
-  glVertexAttribPointer(mAttributeLocations[NORMAL], 3, GL_FLOAT, GL_TRUE, 0, 0); // Normalize the normals
+  glVertexAttribPointer(c.attrVertexNormal, 3, GL_FLOAT, GL_TRUE, 0, 0); // Normalize the normals
+
+  // TODO: don't hardcode this
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, mTextureBuf);
+
+    glBindBuffer(GL_ARRAY_BUFFER, mAttributeBuffers[TEXTURE]);
+    glVertexAttribPointer(c.attrTexCoord, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mAttributeBuffers[INDEX]);
   glDrawElements(GL_TRIANGLES, 3 * mTriangles.size(), GL_UNSIGNED_SHORT, 0);

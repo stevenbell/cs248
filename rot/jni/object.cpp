@@ -2,6 +2,10 @@
 #include "gl_util.h"
 #include "object.h"
 
+Object::Object() :
+  mPosition(1.0f), mUseTexture(false)
+{}
+
 /*
  * Returns true if the texture loads and is valid, false otherwise.
  */
@@ -25,6 +29,28 @@ bool Object::loadTexture(const char* filename)
 
   checkGlError("loadTexture - glTexImage2D");
 
+  // TODO: error checking; return false if something fails
   mUseTexture = true;
   return mUseTexture;
+}
+
+void Object::applyGravity(const glm::vec4 gravity, const std::vector<Object*> &fixedObjects, float dt)
+{
+  mVelocity += gravity * dt;
+  // TODO: replace all this junk with real collision detection
+  mPosition[3][0] += mVelocity.x * -dt;
+  if(mPosition[3][0] > 4.5){ mPosition[3][0] = 4.5; mVelocity[0] = 0; }
+  if(mPosition[3][0] < -4.5){ mPosition[3][0] = -4.5; mVelocity[0] = 0; }
+  mPosition[3][1] += mVelocity.y * dt;
+  if(mPosition[3][1] > 4.5){ mPosition[3][1] = 4.5; mVelocity[1] = 0; }
+  if(mPosition[3][1] < -4.5){ mPosition[3][1] = -4.5; mVelocity[1] = 0; }
+
+  mPosition[3][2] = -3.0f; //+= mVelocity.z * dt;
+}
+
+void Object::render(const RenderContext c)
+{
+  // Do any object-specific setup?
+  // For now, we're doing the position matrix outside...
+  subrender(c); // Call the child's rendering method
 }
