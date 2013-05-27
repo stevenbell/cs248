@@ -1,0 +1,13 @@
+name: Test cube
+difficulty: easy
+author: Steven Bell
+email: sebell@stanford.edu
+start: 25 10 2
+finish: 25 10 2
+
+wall: -5.0,  5.0, -5.0,     5.0,  5.0, -5.0,     -5.0, -5.0, -5.0,     0.25, textures/cube_front.png
+wall: -5.0,  5.0,  5.0,     5.0,  5.0,  5.0,     -5.0, -5.0,  5.0,     0.25, textures/cube_back.png
+wall: -5.0,  5.0,  5.0,    -5.0,  5.0, -5.0,     -5.0, -5.0,  5.0,     0.25, textures/cube_left.png
+wall:  5.0,  5.0,  5.0,     5.0,  5.0, -5.0,      5.0, -5.0,  5.0,     0.25, textures/cube_right.png
+wall: -5.0,  5.0,  5.0,     5.0,  5.0,  5.0,     -5.0,  5.0, -5.0,     0.25, textures/burlwood.png
+wall: -5.0, -5.0,  5.0,     5.0, -5.0,  5.0,     -5.0, -5.0, -5.0,     0.25, textures/mud.png

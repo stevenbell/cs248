@@ -6,6 +6,7 @@
 #include "wall.h"
 
 #include "gl_util.h"
+#include "jnibridge.h"
 #include "log.h"
 #include "scene.h"
 
@@ -199,57 +200,45 @@ bool Scene::load(const char* path)
   // If the graphics context doesn't exist yet, nothing here will work right.
   assert(mGraphicsConfigured);
 
+  // Load the level configuration file
+  char* text;
+  JniBridge::instance()->loadText(path, &text);
+
+  // The level format consists of a series of
+  // KEY : DATA \n
+  // so we can split it with ":" and "\n" and parse the pieces.
+  char* key;
+  char* value;
+  key = strtok(text, ":\n"); // Could use just ":", but this lets us eat empty newlines
+  while(key != NULL){
+    value = strtok(NULL, "\n");
+
+    LOGI("Key: %s  Value: %s", key, value);
+
+    if(strcmp(key, "wall") == 0){
+      float x1, y1, z1, x2, y2, z2, x3, y3, z3, width;
+      char texPath[200];
+      sscanf(value, "%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %s",
+          &x1, &y1, &z1, &x2, &y2, &z2, &x3, &y3, &z3, &width, texPath);
+
+      Wall* w = new Wall(point3(x1, y1, z1),
+                         point3(x2, y2, z2),
+                         point3(x3, y3, z3),
+                         width);
+      w->loadTexture(texPath);
+      mStaticObjects.push_back(w);
+    }
+
+    key = strtok(NULL, ":\n");
+  }
+
+
+  free(text);
+
     Model* theBox = new Model("/sdcard/rot/cube.obj");
     theBox->loadTexture("textures/burlwood.png");
     mDynamicObjects.push_back(theBox);
 
-    /*
-    Model* theBunny = new Model("/sdcard/rot/bunny.obj", attributeLocs);
-    mMovingObjects.push_back(theBunny);
-    */
-
-    // Build a 10x10x10 cube
-    Wall* front = new Wall(point3(-5.0f,  5.0f, -5.0f),
-                           point3( 5.0f,  5.0f, -5.0f),
-                           point3(-5.0f, -5.0f, -5.0f),
-                           0.25f);
-    front->loadTexture("textures/cube_front.png");
-    mStaticObjects.push_back(front);
-
-    Wall* back = new Wall(point3(-5.0f,  5.0f, 5.0f),
-                          point3( 5.0f,  5.0f, 5.0f),
-                          point3(-5.0f, -5.0f, 5.0f),
-                          0.25f);
-    back->loadTexture("textures/cube_back.png");
-    mStaticObjects.push_back(back);
-
-    Wall* left = new Wall(point3(-5.0f,  5.0f,  5.0f),
-                          point3(-5.0f,  5.0f, -5.0f),
-                          point3(-5.0f, -5.0f,  5.0f),
-                          0.25f);
-    left->loadTexture("textures/cube_left.png");
-    mStaticObjects.push_back(left);
-
-    Wall* right = new Wall(point3(5.0f,  5.0f,  5.0f),
-                           point3(5.0f,  5.0f, -5.0f),
-                           point3(5.0f, -5.0f,  5.0f),
-                           0.25f);
-    right->loadTexture("textures/cube_right.png");
-    mStaticObjects.push_back(right);
-
-    Wall* top = new Wall(point3(-5.0f, 5.0f,  5.0f),
-                         point3( 5.0f, 5.0f,  5.0f),
-                         point3(-5.0f, 5.0f, -5.0f),
-                         0.25f);
-    top->loadTexture("textures/mud.png");
-    mStaticObjects.push_back(top);
-
-    Wall* bottom = new Wall(point3(-5.0f, -5.0f,  5.0f),
-                            point3( 5.0f, -5.0f,  5.0f),
-                            point3(-5.0f, -5.0f, -5.0f),
-                            0.25f);
-    bottom->loadTexture("textures/burlwood.png");
-    mStaticObjects.push_back(bottom);
 }
 
 
