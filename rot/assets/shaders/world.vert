@@ -13,7 +13,6 @@ void main()
 {
   vPos = modelViewMatrix * vec4(vertexPosition, 1.0);
   vNormal = modelViewMatrix * vec4(vertexNormal, 1.0);
-  //vTexCoord = vec2((vertexPosition.x + 1.0) / 2.0, (vertexPosition.y + 1.0) / 2.0);
   vTexCoord = vertexTexCoord;
   gl_Position = projectionMatrix * vPos;
 }

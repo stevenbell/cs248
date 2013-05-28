@@ -18,6 +18,11 @@ Wall::Wall(point3 a, point3 b, point3 c, GLfloat thickness)
   mVertices[9] = b.x + ortho.x; mVertices[10] = b.y + ortho.y; mVertices[11] = b.z + ortho.z;
 
   // TODO: Find the cross product to get the normal vector
+  vec3 normal = vec3::cross(ab, ac);
+  GLfloat normals[12];
+  normals[0] = normals[3] = normals[6] = normals[9] = normal.x;
+  normals[1] = normals[4] = normals[7] = normals[10] = normal.y;
+  normals[2] = normals[5] = normals[8] = normals[11] = normal.z;
 
   mIndices[0] = 0; mIndices[1] = 1; mIndices[2] = 2;
   mIndices[3] = 1; mIndices[4] = 2; mIndices[5] = 3;
@@ -36,7 +41,7 @@ Wall::Wall(point3 a, point3 b, point3 c, GLfloat thickness)
   glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*12, mVertices, GL_STATIC_DRAW);
 
   glBindBuffer(GL_ARRAY_BUFFER, mAttributeBuffers[NORMAL]);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*12, mVertices, GL_STATIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*12, normals, GL_STATIC_DRAW);
 
   glBindBuffer(GL_ARRAY_BUFFER, mAttributeBuffers[TEXTURE]);
   glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*8, texCoords, GL_STATIC_DRAW);

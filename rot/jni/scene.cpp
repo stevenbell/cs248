@@ -74,7 +74,7 @@ bool Scene::setupGraphics(int w, int h) {
     printGLString("Extensions", GL_EXTENSIONS);
 
     // Compile and link the shader program
-    gProgram = createProgram("shaders/world.vert", "shaders/dumbtexture.frag");
+    gProgram = createProgram("shaders/world.vert", "shaders/lighttexture.frag");
     uiShaderProgram = createProgram("shaders/tex_passthrough.vert", "shaders/dumbtexture.frag");
     if (!gProgram || !uiShaderProgram) {
         LOGE("Failed to compile at least one shader program!");
@@ -312,10 +312,10 @@ void Scene::renderFrame(void)
   glUniformMatrix4fv(mContext.uniformProjection, 1, false, (GLfloat*)glm::value_ptr(mProjectionMatrix));
 
   // Set up the lighting
-  glUniform4f(mUniformAmbient, 0.0f, 0.1f, 0.3f, 1.0f);
-  glUniform4f(mUniformDiffuse, 0.8f, 0.0f, 0.0f, 1.0f);
+  glUniform4f(mUniformAmbient, 0.2f, 0.2f, 0.3f, 1.0f);
+  glUniform4f(mUniformDiffuse, 1.0f, 0.95f, 0.8f, 1.0f);
   //glUniform4f(specularUniform, 1.0f, 1.0f, 1.0f, 1.0f);
-  glUniform4f(mContext.uniformLightPos, -3.0f, 3.0f, 0.0f, 1.0f);
+  glUniform4f(mContext.uniformLightPos, -20.0f, 80.0f, 20.0f, 1.0f); // TODO: Move this around
   glUniform3fv(mContext.uniformCameraPos, 1, (GLfloat*)glm::value_ptr(mCameraPosition));
   checkGlError("set uniforms");
 

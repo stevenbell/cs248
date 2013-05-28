@@ -22,7 +22,11 @@ struct point3 {
   // Things that really apply to vectors...
   float norm(){ return(sqrt(x * x + y * y + z * z)); };
   static float dot(point3 a, point3 b){ return(a.x * b.x + a.y * b.y + a.z * b.z); };
-
+  static point3 cross(point3 a, point3 b){
+    return(point3(a.y * b.z - b.y * a.z,
+                  b.x * a.z - a.x * b.z,
+                  a.x * b.y - b.x * a.y));
+  };
 
   GLfloat x, y, z; // Floating point position in 3-space
 };
