@@ -2,6 +2,10 @@
 #include "gl_util.h"
 #include "object.h"
 
+const GLfloat RenderContext::IDENTITY_MATRIX_4[16] = {1.0f, 0.0f, 0.0f, 0.0f,
+                                                      0.0f, 1.0f, 0.0f, 0.0f,
+                                                      0.0f, 0.0f, 1.0f, 0.0f,
+                                                      0.0f, 0.0f, 0.0f, 1.0f};
 Object::Object() :
   mPosition(1.0f), mUseTexture(false)
 {}

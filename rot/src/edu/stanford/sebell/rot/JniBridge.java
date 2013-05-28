@@ -22,5 +22,5 @@ public class JniBridge {
      public static native void step();
      public static native void setAssetManager(AssetManager am);
      public static native void setPngLoader(AssetLoader loader);
-     public static native void touchEvent(float x, float y);
+     public static native void touchEvent(float x, float y, int action);
 }

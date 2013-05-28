@@ -12,11 +12,6 @@
 
 Scene* Scene::mInstance = 0;
 
-const GLfloat Scene::IDENTITY_MATRIX_4[16] = {1.0f, 0.0f, 0.0f, 0.0f,
-                                              0.0f, 1.0f, 0.0f, 0.0f,
-                                              0.0f, 0.0f, 1.0f, 0.0f,
-                                              0.0f, 0.0f, 0.0f, 1.0f};
-
 Scene* Scene::instance(void)
 {
   if(!mInstance){
@@ -79,8 +74,9 @@ bool Scene::setupGraphics(int w, int h) {
 
     // Compile and link the shader program
     gProgram = createProgram("shaders/world.vert", "shaders/dumbtexture.frag");
-    if (!gProgram) {
-        LOGE("Could not create program.");
+    uiShaderProgram = createProgram("shaders/tex_passthrough.vert", "shaders/dumbtexture.frag");
+    if (!gProgram || !uiShaderProgram) {
+        LOGE("Failed to compile at least one shader program!");
         return false;
     }
 
@@ -95,9 +91,11 @@ bool Scene::setupGraphics(int w, int h) {
     mContext.attrVertexPosition = glGetAttribLocation(gProgram, "vertexPosition");
     mContext.attrVertexNormal = glGetAttribLocation(gProgram, "vertexNormal");
     mContext.attrTexCoord = glGetAttribLocation(gProgram, "vertexTexCoord");
-    glEnableVertexAttribArray(mContext.attrVertexPosition);
-    glEnableVertexAttribArray(mContext.attrVertexNormal);
-    glEnableVertexAttribArray(mContext.attrTexCoord);
+
+
+    // Handles for UI rendering shader
+    mUiContext.attrVertexPosition = glGetAttribLocation(uiShaderProgram, "vertexPosition");
+    mUiContext.attrTexCoord = glGetAttribLocation(uiShaderProgram, "vertexTexCoord");
 
     checkGlError("get uniform/attributes locations");
 
@@ -105,10 +103,17 @@ bool Scene::setupGraphics(int w, int h) {
     glDepthFunc(GL_LEQUAL);
     glDepthRangef(0.0f, 1.0f);
 
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     glViewport(0, 0, w, h);
     checkGlError("glViewport");
 
+    mWidth = w;
+    mHeight = h;
     mAspectRatio = (float)w / h;
+
+    mUi = new Ui;
 
     mGraphicsConfigured = true;
     return true;
@@ -142,7 +147,7 @@ glm::mat4 Scene::calculateCameraView(glm::vec3 cameraPosition, float aspectRatio
   glm::mat4 m(1.0); // Identity matrix
 
   // Translate and then rotate the world relative to the camera
-  m = glm::translate(m, glm::vec3(0.0f, 0.0f, 0.0f)); // TODO: replace with mCameraPosition
+  m = glm::translate(m, -mCameraPosition); // TODO: replace with mCameraPosition
 
   glm::mat4 r = mOrientation.getCameraOrientation();
 
@@ -187,8 +192,7 @@ glm::mat4 Scene::calculateCameraView(glm::vec3 cameraPosition, float aspectRatio
   // Transform scene coordinates to image coordinates
   // TODO: probably clip nearer
   //m = glm::perspective(90.0f, aspectRatio, 0.5f, 100.0f) * mDeviceAxisMapping * r;
-  m = glm::perspective(105.0f, aspectRatio, 0.5f, 100.0f) * r * mDeviceAxisMapping * mWorldRotation;
-  //m = glm::perspective(90.0f, aspectRatio, 0.5f, 100.0f) * r;
+  m = glm::perspective(105.0f, aspectRatio, 0.5f, 100.0f) * r * mDeviceAxisMapping * mWorldRotation * m;
 
   return(m);
 }
@@ -248,12 +252,30 @@ void Scene::update()
   float dt = 0.06; // Time differential, in seconds TODO: calculate, don't hardcode
 
   // Move the character
+  if(mUi->forward() || mUi->backward()){
+    // These lines are based on the camera view calculation; see that code for a full description
+    glm::mat4 r = mOrientation.getCameraOrientation();
+    glm::vec4 sceneLookPoint = glm::transpose(r * mDeviceAxisMapping * mWorldRotation) * glm::vec4(0.0f, 0.0f, 1.0f, 0.0f);
+
+    glm::vec4 up = mWorldRotation * glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
+    glm::vec4 moveVector = sceneLookPoint - (up * glm::dot(sceneLookPoint, up));
+
+    //LOGI("Scene look: %f %f %f", moveVector.x, moveVector.y, moveVector.z);
+
+    float vel = mUi->forward() ? -5.0 : 5.0;
+
+    mCameraPosition.x += dt * vel * moveVector.x;
+    mCameraPosition.y += dt * vel * moveVector.y;
+    mCameraPosition.z += dt * vel * moveVector.z;
+    //LOGI("New position : %f %f %f", mCameraPosition.x, mCameraPosition.y, mCameraPosition.z);
+  }
+
 
   // Update particle system
 
   // Apply gravity/physics to movable objects and detect collisions
-  glm::vec4 gravity = mWorldRotation * glm::vec4(0.0f, -1.0f, 0.0f, 0.0f);
-  LOGI("Gravity: %f  %f  %f", gravity.x, gravity.y, gravity.z);
+  glm::vec4 gravity = mWorldRotation * glm::vec4(0.0f, -2.0f, 0.0f, 0.0f);
+  //LOGI("Gravity: %f  %f  %f", gravity.x, gravity.y, gravity.z);
   for(int i = 0; i < mDynamicObjects.size(); i++){
     mDynamicObjects[i]->applyGravity(gravity, mStaticObjects, dt);
   }
@@ -272,7 +294,11 @@ void Scene::renderFrame(void)
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   checkGlError("glClear");
 
+  // Set the program for 3D rendering and enable the necessary vertex arrays
   glUseProgram(gProgram);
+  glEnableVertexAttribArray(mContext.attrVertexPosition);
+  glEnableVertexAttribArray(mContext.attrVertexNormal);
+  glEnableVertexAttribArray(mContext.attrTexCoord);
   checkGlError("glUseProgram");
 
   // Set up the camera projection matrix
@@ -296,27 +322,33 @@ void Scene::renderFrame(void)
   checkGlError("Render dynamic objects");
 
   // Set the identity matrix and render all of the fixed objects
-  glUniformMatrix4fv(mContext.uniformModelView, 1, false, IDENTITY_MATRIX_4);
+  glUniformMatrix4fv(mContext.uniformModelView, 1, false, RenderContext::IDENTITY_MATRIX_4);
   for(int i = 0; i < mStaticObjects.size(); i++){
     mStaticObjects[i]->render(mContext);
   }
   checkGlError("Render static objects");
 
+
+  glUseProgram(uiShaderProgram);
+  glEnableVertexAttribArray(mUiContext.attrVertexPosition);
+  glEnableVertexAttribArray(mUiContext.attrTexCoord);
+
+  mUi->render(mUiContext);
 }
 
-void Scene::touchEvent(float x, float y)
+void Scene::touchEvent(float x, float y, int action)
 {
-  LOGI("Touch event: %f %f", x, y);
-/*
-  if(y > 500){
-    mCameraPosition.z = mCameraPosition.z + 0.5f;
+  //LOGI("Touch event: %f %f", x, y);
+
+  if(y < 500){
+    // Convert point to GL screen coordinates where the UI lives
+    // (0, 0) is the top left in touch coordinate space
+    mUi->handleTouchEvent(x*2.0/mWidth - 1.0, 1.0 - y*2.0/mHeight, action);
+  LOGI("Touch event, GL space: %f %f", x*2.0/mWidth - 1.0f, 1.0f - y*2.0/mHeight);
+
   }
   else{
-    mCameraPosition.z = mCameraPosition.z - 0.5f;
+    mDoRotation = true;
   }
-*/
-
-  //mWorldRotation = glm::rotate(mWorldRotation, 45.0f, glm::vec3(0.0f, 0.0f, 1.0f));
-  mDoRotation = true;
 }
 

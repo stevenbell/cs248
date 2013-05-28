@@ -125,7 +125,7 @@ extern "C" {
     JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_JniBridge_step(JNIEnv * env, jobject obj);
     JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_JniBridge_setPngLoader(JNIEnv * env, jobject obj, jobject loader);
     JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_JniBridge_setAssetManager(JNIEnv * env, jobject obj, jobject am);
-    JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_JniBridge_touchEvent(JNIEnv * env, jobject obj,  jfloat x, jfloat y);
+    JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_JniBridge_touchEvent(JNIEnv * env, jobject obj,  jfloat x, jfloat y, jint action);
 };
 
 JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_JniBridge_init(JNIEnv * env, jobject obj,  jint width, jint height)
@@ -156,8 +156,7 @@ JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_JniBridge_setPngLoader(JNIEn
     JniBridge::instance()->setPngLoader(env, loader);
 }
 
-JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_JniBridge_touchEvent(JNIEnv * env, jobject obj,  jfloat x, jfloat y)
+JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_JniBridge_touchEvent(JNIEnv * env, jobject obj,  jfloat x, jfloat y, jint action)
 {
-  Scene::instance()->touchEvent(x, y);
-  //JniBridge::instance()->loadPng("textures/mud.png");
+  Scene::instance()->touchEvent(x, y, action);
 }

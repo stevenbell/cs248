@@ -10,9 +10,7 @@
 #include <vector>
 #include "object.h"
 #include "orientation.h"
-
-//#include "quaternion.h"
-//#include "spline.h"
+#include "ui.h"
 
 /* Singleton class representing the scene.
  * This contains handles to the GL resources.
@@ -26,7 +24,7 @@ public:
   bool setupGraphics(int w, int h);
   void update(void);
   void renderFrame(void);
-  void touchEvent(float x, float y); // TODO: move me?
+  void touchEvent(float x, float y, int action); // TODO: move me?
 
 private:
   Scene(void);
@@ -39,11 +37,13 @@ private:
   std::vector<Object*> mDynamicObjects; // Things which move (i.e, are updated by physics)
 
   GLuint gProgram;
+  GLuint uiShaderProgram;
 
-  GLuint mVertexBuffer;
-  GLuint mNormalBuffer;
+  //GLuint mVertexBuffer;
+  //GLuint mNormalBuffer;
 
   RenderContext mContext;
+  RenderContext mUiContext;
 
   GLuint mUniformAmbient;
   GLuint mUniformDiffuse;
@@ -58,12 +58,12 @@ private:
   glm::mat4 mWorldRotation;
   glm::mat4 mDeviceAxisMapping;
 
-  // This should live in a more general place
-  const static GLfloat IDENTITY_MATRIX_4[16];
+  Ui* mUi; // Need a pointer since we can't init until we have a GL context
 
   // HACK:
   bool mDoRotation;
   float mAspectRatio;
+  float mWidth, mHeight;
 };
 
 #endif

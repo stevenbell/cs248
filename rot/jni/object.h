@@ -20,6 +20,8 @@ struct RenderContext
   GLuint attrVertexPosition;
   GLuint attrVertexNormal;
   GLuint attrTexCoord;
+
+  const static GLfloat IDENTITY_MATRIX_4[16];
 };
 
 class Object
