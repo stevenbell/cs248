@@ -21,7 +21,8 @@ Scene* Scene::instance(void)
 }
 
 Scene::Scene(void)
-  : mGraphicsConfigured(false)
+  : mGraphicsConfigured(false),
+    mDoRotation(false)
 {
   mWorldRotation = glm::mat4(1.0f); // Identity matrix
   /* Hrm. This matrix looks familiar...
@@ -232,6 +233,11 @@ bool Scene::load(const char* path)
       w->loadTexture(texPath);
       mStaticObjects.push_back(w);
     }
+    else if(strcmp(key, "start") == 0){
+      float x, y, z;
+      sscanf(value, "%f, %f %f", &x, &y, &z);
+      mCameraPosition = glm::vec3(x, y, z);
+    }
 
     key = strtok(NULL, ":\n");
   }
@@ -333,6 +339,7 @@ void Scene::renderFrame(void)
   glEnableVertexAttribArray(mUiContext.attrVertexPosition);
   glEnableVertexAttribArray(mUiContext.attrTexCoord);
 
+  glClear(GL_DEPTH_BUFFER_BIT); // Render the UI on top of everything else
   mUi->render(mUiContext);
 }
 
@@ -348,7 +355,7 @@ void Scene::touchEvent(float x, float y, int action)
 
   }
   else{
-    mDoRotation = true;
+    mDoRotation = (action == 0x00); // If a down event
   }
 }
 
