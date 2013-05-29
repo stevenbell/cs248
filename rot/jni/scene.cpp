@@ -74,7 +74,7 @@ bool Scene::setupGraphics(int w, int h) {
     printGLString("Extensions", GL_EXTENSIONS);
 
     // Compile and link the shader program
-    gProgram = createProgram("shaders/world.vert", "shaders/lighttexture.frag");
+    gProgram = createProgram("shaders/world.vert", "shaders/dumbtexture.frag");
     uiShaderProgram = createProgram("shaders/tex_passthrough.vert", "shaders/dumbtexture.frag");
     if (!gProgram || !uiShaderProgram) {
         LOGE("Failed to compile at least one shader program!");
@@ -244,11 +244,11 @@ bool Scene::load(const char* path)
 
 
   free(text);
-
+/*
     Model* theBox = new Model("/sdcard/rot/cube.obj");
     theBox->loadTexture("textures/burlwood.png");
     mDynamicObjects.push_back(theBox);
-
+*/
 }
 
 
@@ -270,12 +270,31 @@ void Scene::update()
 
     float vel = mUi->forward() ? -5.0 : 5.0;
 
-    mCameraPosition.x += dt * vel * moveVector.x;
-    mCameraPosition.y += dt * vel * moveVector.y;
-    mCameraPosition.z += dt * vel * moveVector.z;
+    glm::vec3 newPosition = mCameraPosition + dt * vel * glm::vec3(moveVector.x, moveVector.y, moveVector.z);
+    //mCameraPosition.y += dt * vel * moveVector.y;
+    //mCameraPosition.z += dt * vel * moveVector.z;
     //LOGI("New position : %f %f %f", mCameraPosition.x, mCameraPosition.y, mCameraPosition.z);
+
+    bool collides = false;
+    for(int i = 0; collides == false && i < mStaticObjects.size(); i++){
+      collides |= mStaticObjects[i]->collidesWith(newPosition, 1.0);
+    }
+    if(!collides){
+      mCameraPosition = newPosition;
+    }
+    else{
+      // Play a collision sound or something clever.
+    }
+
   }
 
+  // Character collision
+  LOGI("collision: %d", mStaticObjects[3]->collidesWith(mCameraPosition, 1));
+
+  // Update the lighting based on the character position
+  // This is really hacky...
+  //glm::vec4 up = mWorldRotation * glm::vec4(0.0f, 10.0f, 0.0f, 0.0f);
+  //mLightPosition = mCameraPosition + glm::vec3(up.x, up.y, up.z);
 
   // Update particle system
 
@@ -312,11 +331,15 @@ void Scene::renderFrame(void)
   glUniformMatrix4fv(mContext.uniformProjection, 1, false, (GLfloat*)glm::value_ptr(mProjectionMatrix));
 
   // Set up the lighting
+  //LOGI("Light position: %f %f %f", mLightPosition.x, mLightPosition.y, mLightPosition.z);
+
   glUniform4f(mUniformAmbient, 0.2f, 0.2f, 0.3f, 1.0f);
   glUniform4f(mUniformDiffuse, 1.0f, 0.95f, 0.8f, 1.0f);
   //glUniform4f(specularUniform, 1.0f, 1.0f, 1.0f, 1.0f);
-  glUniform4f(mContext.uniformLightPos, -20.0f, 80.0f, 20.0f, 1.0f); // TODO: Move this around
-  glUniform3fv(mContext.uniformCameraPos, 1, (GLfloat*)glm::value_ptr(mCameraPosition));
+  //glUniform3fv(mContext.uniformLightPos, 1, (GLfloat*)glm::value_ptr(mLightPosition));
+  glUniform3f(mContext.uniformLightPos, mLightPosition.x, mLightPosition.y, mLightPosition.z);
+
+  //glUniform3fv(mContext.uniformCameraPos, 1, (GLfloat*)glm::value_ptr(mCameraPosition));
   checkGlError("set uniforms");
 
   // Draw the objects in the scene

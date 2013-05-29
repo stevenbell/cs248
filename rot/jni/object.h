@@ -3,6 +3,7 @@
 /* Base class for a generic object in the game */
 
 #include "texturehandler.h"
+#include "gametypes.h"
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
 #include <glm.hpp>
@@ -32,6 +33,9 @@ public:
   const glm::mat4& positionMatrix() { return mPosition; };
   void applyGravity(const glm::vec4 gravity, const std::vector<Object*> &fixedObjects, float dt);
   void render(RenderContext c);
+
+  virtual bool collidesWith(vec3 p, float distance){ return false; };
+  virtual bool collidesWith(glm::vec3 p, float distance){ return collidesWith(vec3(p.x, p.y, p.z), distance); };
 
 protected:
   virtual void subrender(RenderContext c) = 0;

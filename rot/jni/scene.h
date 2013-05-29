@@ -53,6 +53,9 @@ private:
   glm::mat4 mProjectionMatrix;
   glm::mat4 mModelViewMatrix;
 
+  // For now, we have only one light.  Maybe we'll add more later.
+  glm::vec3 mLightPosition;
+
   // This clearly isn't part of the scene...
   Orientation mOrientation;
   glm::mat4 mWorldRotation;

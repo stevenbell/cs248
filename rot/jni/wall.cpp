@@ -17,12 +17,21 @@ Wall::Wall(point3 a, point3 b, point3 c, GLfloat thickness)
   mVertices[6] = a.x + ortho.x; mVertices[7] = a.y + ortho.y; mVertices[8] = a.z + ortho.z;
   mVertices[9] = b.x + ortho.x; mVertices[10] = b.y + ortho.y; mVertices[11] = b.z + ortho.z;
 
-  // TODO: Find the cross product to get the normal vector
-  vec3 normal = vec3::cross(ab, ac);
+  // Save for later collision computations
+  mOrigin = a;
+  mLenA = ab.norm();
+  mSideA = ab / mLenA;
+  mLenB = ortho.norm();
+  mSideB = ortho / mLenB;
+
+  // Find the cross product to get the normal vector
+  mNormal = vec3::cross(ab, ac);
+  mNormal = mNormal / mNormal.norm(); // Normalize to unit length
+
   GLfloat normals[12];
-  normals[0] = normals[3] = normals[6] = normals[9] = normal.x;
-  normals[1] = normals[4] = normals[7] = normals[10] = normal.y;
-  normals[2] = normals[5] = normals[8] = normals[11] = normal.z;
+  normals[0] = normals[3] = normals[6] = normals[9] = mNormal.x;
+  normals[1] = normals[4] = normals[7] = normals[10] = mNormal.y;
+  normals[2] = normals[5] = normals[8] = normals[11] = mNormal.z;
 
   mIndices[0] = 0; mIndices[1] = 1; mIndices[2] = 2;
   mIndices[3] = 1; mIndices[4] = 2; mIndices[5] = 3;
@@ -71,4 +80,15 @@ void Wall::subrender(RenderContext c)
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mAttributeBuffers[INDEX]);
   glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
+}
+
+bool Wall::collidesWith(point3 p, float distance)
+{
+  // The point collides with the wall if the distance is less than the
+  // threshold and the projection of the point onto the wall intersects the wall
+  p = p - mOrigin; // Translate to origin (i.e, work with the relative distance)
+
+  return(fabs(vec3::dot(p, mNormal)) < distance &&
+         vec3::dot(p, mSideA) > 0 && vec3::dot(p, mSideA) < mLenA &&
+         vec3::dot(p, mSideB) > 0 && vec3::dot(p, mSideB) < mLenB);
 }

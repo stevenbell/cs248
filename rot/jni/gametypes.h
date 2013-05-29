@@ -9,9 +9,12 @@
 
 
 struct point3 {
+  point3() { x = y = z = 0.0f; }
   point3(GLfloat xx, GLfloat yy, GLfloat zz) { x = xx; y = yy; z = zz; }
   void operator+=(point3 &other){ x += other.x; y += other.y; z += other.z; }
   void operator-=(point3 &other){ x -= other.x; y -= other.y; z -= other.z; }
+  void operator*=(float mul){ x *= mul; y *= mul; z *= mul; }
+  void operator/=(float divisor){ x /= divisor; y /= divisor; z /= divisor; }
 
   point3 operator+(point3 addend){ return(point3(x+addend.x, y+addend.y, z+addend.z)); }
   point3 operator-(point3 subtend){ return(point3(x-subtend.x, y-subtend.y, z-subtend.z)); }
