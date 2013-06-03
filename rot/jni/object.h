@@ -32,6 +32,7 @@ public:
   bool loadTexture(const char* filename);
   const glm::mat4& positionMatrix() { return mPosition; };
   void applyGravity(const glm::vec4 gravity, const std::vector<Object*> &fixedObjects, float dt);
+  void setPosition(float x, float y, float z);
   void render(RenderContext c);
 
   virtual bool collidesWith(vec3 p, float distance){ return false; };

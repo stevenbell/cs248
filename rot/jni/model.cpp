@@ -146,11 +146,6 @@ void Model::calculateVertexNormals()
  */
 void Model::loadVertexBuffers()
 {
-  glEnableVertexAttribArray(mAttributeBuffers[VERTEX]);
-  glEnableVertexAttribArray(mAttributeBuffers[NORMAL]);
-  glEnableVertexAttribArray(mAttributeBuffers[TEXTURE]);
-  glEnableVertexAttribArray(mAttributeBuffers[INDEX]);
-
   int arrSize = sizeof(float) * 3 * mVertices.size();
   float* vertexArr = (float*)malloc(arrSize);
   float* normalArr = (float*)malloc(arrSize);
@@ -171,6 +166,8 @@ void Model::loadVertexBuffers()
   glBindBuffer(GL_ARRAY_BUFFER, mAttributeBuffers[NORMAL]);
   glBufferData(GL_ARRAY_BUFFER, arrSize, normalArr, GL_STATIC_DRAW);
 
+  checkGlError("Bind/fill vertices and normals");
+
   // TODO: Do this right, and use real texture coordinates
   glBindBuffer(GL_ARRAY_BUFFER, mAttributeBuffers[TEXTURE]);
   glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*2*mVertices.size(), vertexArr, GL_STATIC_DRAW);
@@ -186,6 +183,7 @@ void Model::loadVertexBuffers()
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mAttributeBuffers[INDEX]);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexSize, indexArr, GL_STATIC_DRAW);
 
+  checkGlError("Done filling attrib arrays");
   // The data is now on the GPU, so we don't need it anymore
   free(vertexArr);
   free(normalArr);

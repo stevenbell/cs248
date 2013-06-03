@@ -52,6 +52,14 @@ void Object::applyGravity(const glm::vec4 gravity, const std::vector<Object*> &f
   mPosition[3][2] = -3.0f; //+= mVelocity.z * dt;
 }
 
+void Object::setPosition(float x, float y, float z)
+{
+  mPosition[3][0] = x;
+  mPosition[3][1] = y;
+  mPosition[3][2] = z;
+}
+
+
 void Object::render(const RenderContext c)
 {
   // Do any object-specific setup?

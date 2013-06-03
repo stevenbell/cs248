@@ -319,7 +319,7 @@ class GL2JNIView extends GLSurfaceView {
 
         public void onSurfaceChanged(GL10 gl, int width, int height) {
             JniBridge.init(width, height); // TODO: surfaceChanged isn't really the right method here...
-			JniBridge.loadLevel("levels/level01/level.dat"); // TODO: parameterize this
+			JniBridge.loadLevel("levels/level02/level.dat"); // TODO: parameterize this
         }
 
         public void onSurfaceCreated(GL10 gl, EGLConfig config) {

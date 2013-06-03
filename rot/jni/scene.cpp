@@ -148,7 +148,7 @@ glm::mat4 Scene::calculateCameraView(glm::vec3 cameraPosition, float aspectRatio
   glm::mat4 m(1.0); // Identity matrix
 
   // Translate and then rotate the world relative to the camera
-  m = glm::translate(m, -mCameraPosition); // TODO: replace with mCameraPosition
+  m = glm::translate(m, -mCameraPosition);
 
   glm::mat4 r = mOrientation.getCameraOrientation();
 
@@ -235,7 +235,7 @@ bool Scene::load(const char* path)
     }
     else if(strcmp(key, "start") == 0){
       float x, y, z;
-      sscanf(value, "%f, %f %f", &x, &y, &z);
+      sscanf(value, "%f, %f, %f", &x, &y, &z);
       mCameraPosition = glm::vec3(x, y, z);
     }
 
@@ -244,6 +244,18 @@ bool Scene::load(const char* path)
 
 
   free(text);
+
+  Model* theEnd = new Model("/sdcard/rot/star.obj");
+  checkGlError("loaded \"theEnd\"");
+  theEnd->loadTexture("textures/happyface.png");
+  theEnd->setPosition(5, 5, 45);
+  mDynamicObjects.push_back(theEnd);
+
+  Model* player = new Model("/sdcard/rot/sphere.obj");
+  player->loadTexture("textures/happyface.png");
+  player->setPosition(5, 5, 10);
+  mDynamicObjects.push_back(player);
+
 /*
     Model* theBox = new Model("/sdcard/rot/cube.obj");
     theBox->loadTexture("textures/burlwood.png");
@@ -289,7 +301,6 @@ void Scene::update()
   }
 
   // Character collision
-  LOGI("collision: %d", mStaticObjects[3]->collidesWith(mCameraPosition, 1));
 
   // Update the lighting based on the character position
   // This is really hacky...
@@ -301,9 +312,11 @@ void Scene::update()
   // Apply gravity/physics to movable objects and detect collisions
   glm::vec4 gravity = mWorldRotation * glm::vec4(0.0f, -2.0f, 0.0f, 0.0f);
   //LOGI("Gravity: %f  %f  %f", gravity.x, gravity.y, gravity.z);
+  /*
   for(int i = 0; i < mDynamicObjects.size(); i++){
     mDynamicObjects[i]->applyGravity(gravity, mStaticObjects, dt);
   }
+  */
 
 
   // Check if the level is complete
@@ -364,6 +377,8 @@ void Scene::renderFrame(void)
 
   glClear(GL_DEPTH_BUFFER_BIT); // Render the UI on top of everything else
   mUi->render(mUiContext);
+
+  checkGlError("Rendering UI/end of renderFrame()");
 }
 
 void Scene::touchEvent(float x, float y, int action)
@@ -378,7 +393,14 @@ void Scene::touchEvent(float x, float y, int action)
 
   }
   else{
-    mDoRotation = (action == 0x00); // If a down event
+    if(action == 0x00){
+      if(x < mWidth / 2){
+        mWorldRotation = glm::rotate(mWorldRotation, -90.0f, glm::vec3(0.0f, 0.0f, 1.0f));
+      }
+      else{
+        mWorldRotation = glm::rotate(mWorldRotation, 90.0f, glm::vec3(0.0f, 0.0f, 1.0f));
+      }
+    }
   }
 }
 

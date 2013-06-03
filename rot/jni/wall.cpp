@@ -41,10 +41,6 @@ Wall::Wall(point3 a, point3 b, point3 c, GLfloat thickness)
   // Set up OpenGL stuff
   // Create buffer handles for all of our vertex attribute buffers
   glGenBuffers(4, mAttributeBuffers);
-  glEnableVertexAttribArray(mAttributeBuffers[VERTEX]);
-  glEnableVertexAttribArray(mAttributeBuffers[NORMAL]);
-  // Shouldn't we enable texture here too?
-  glEnableVertexAttribArray(mAttributeBuffers[INDEX]);
 
   glBindBuffer(GL_ARRAY_BUFFER, mAttributeBuffers[VERTEX]);
   glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*12, mVertices, GL_STATIC_DRAW);
