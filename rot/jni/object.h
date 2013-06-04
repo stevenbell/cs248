@@ -36,7 +36,9 @@ public:
   void render(RenderContext c);
 
   virtual bool collidesWith(vec3 p, float distance){ return false; };
-  virtual bool collidesWith(glm::vec3 p, float distance){ return collidesWith(vec3(p.x, p.y, p.z), distance); };
+  bool collidesWith(glm::vec3 p, float distance){ return collidesWith(vec3(p.x, p.y, p.z), distance); };
+  virtual vec3 collisionNormal(point3 p){ return vec3(1.0f, 0.0f, 0.0f); };
+  glm::vec3 collisionNormal(glm::vec3 p);
 
 protected:
   virtual void subrender(RenderContext c) = 0;

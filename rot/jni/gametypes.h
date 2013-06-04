@@ -7,7 +7,8 @@
 #include <GLES2/gl2ext.h>
 #include <cmath>
 
-
+/* Minimal structure for representing points and vectors.
+ * It would be possible to use glm here, but this is probably faster. */
 struct point3 {
   point3() { x = y = z = 0.0f; }
   point3(GLfloat xx, GLfloat yy, GLfloat zz) { x = xx; y = yy; z = zz; }
@@ -30,6 +31,7 @@ struct point3 {
                   b.x * a.z - a.x * b.z,
                   a.x * b.y - b.x * a.y));
   };
+  point3 operator-(void){ return(point3(-x, -y, -z)); }; // Negation
 
   GLfloat x, y, z; // Floating point position in 3-space
 };

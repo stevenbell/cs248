@@ -11,6 +11,7 @@ public:
   Wall(point3 a, point3 b, point3 c, GLfloat thickness);
   virtual void subrender(RenderContext c);
   virtual bool collidesWith(point3 p, float distance);
+  virtual vec3 collisionNormal(point3 p);
 
 private:
   // Pointer to texture

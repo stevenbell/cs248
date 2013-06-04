@@ -23,6 +23,8 @@ public:
   Model(const char* filename);
 
   virtual void subrender(RenderContext c);
+  virtual bool collidesWith(point3 p, float distance);
+
   void toggleFlatShading() { mFlatShading = !mFlatShading; };
   Extents extents() { return mExtents; }
 

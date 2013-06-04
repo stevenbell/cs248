@@ -88,3 +88,17 @@ bool Wall::collidesWith(point3 p, float distance)
          vec3::dot(p, mSideA) > 0 && vec3::dot(p, mSideA) < mLenA &&
          vec3::dot(p, mSideB) > 0 && vec3::dot(p, mSideB) < mLenB);
 }
+
+// Return a vector in the direction a collision should prevent motion
+// For a wall, this will always be in the direction of the normal
+vec3 Wall::collisionNormal(point3 p)
+{
+  p = p - mOrigin; // Translate to origin (i.e, work with the relative distance)
+  if(vec3::dot(p, mNormal) > 0){
+    return(mNormal);
+  }
+  else{
+    return(-mNormal);
+  }
+
+}

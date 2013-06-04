@@ -22,7 +22,9 @@ Scene* Scene::instance(void)
 
 Scene::Scene(void)
   : mGraphicsConfigured(false),
-    mDoRotation(false)
+    mDoRotation(false),
+    mXMin(-10.0), mXMax(10.0), mYMin(-10.0), mYMax(10.0), mZMin(-10.0), mZMax(10.0),
+    mGameStatus(PLAYING)
 {
   mWorldRotation = glm::mat4(1.0f); // Identity matrix
   /* Hrm. This matrix looks familiar...
@@ -220,6 +222,7 @@ bool Scene::load(const char* path)
 
     LOGI("Key: %s  Value: %s", key, value);
 
+    // Walls
     if(strcmp(key, "wall") == 0){
       float x1, y1, z1, x2, y2, z2, x3, y3, z3, width;
       char texPath[200];
@@ -233,10 +236,25 @@ bool Scene::load(const char* path)
       w->loadTexture(texPath);
       mStaticObjects.push_back(w);
     }
+    // Start position
     else if(strcmp(key, "start") == 0){
       float x, y, z;
       sscanf(value, "%f, %f, %f", &x, &y, &z);
       mCameraPosition = glm::vec3(x, y, z);
+    }
+    // Goal position
+    else if(strcmp(key, "finish") == 0){
+      float x, y, z;
+      sscanf(value, "%f, %f, %f", &x, &y, &z);
+
+      mFinishMarker = new Model("/sdcard/rot/star.obj");
+      mFinishMarker->loadTexture("textures/happyface.png");
+      mFinishMarker->setPosition(x, y, z);
+      mStaticObjects.push_back(mFinishMarker);
+    }
+    // Boundaries
+    else if(strcmp(key, "bounds") == 0){
+      sscanf(value, "%f, %f, %f, %f, %f, %f", &mXMin, &mXMax, &mYMin, &mYMax, &mZMin, &mZMax);
     }
 
     key = strtok(NULL, ":\n");
@@ -245,22 +263,20 @@ bool Scene::load(const char* path)
 
   free(text);
 
-  Model* theEnd = new Model("/sdcard/rot/star.obj");
-  checkGlError("loaded \"theEnd\"");
-  theEnd->loadTexture("textures/happyface.png");
-  theEnd->setPosition(5, 5, 45);
-  mDynamicObjects.push_back(theEnd);
 
-  Model* player = new Model("/sdcard/rot/sphere.obj");
-  player->loadTexture("textures/happyface.png");
-  player->setPosition(5, 5, 10);
-  mDynamicObjects.push_back(player);
+/*
+  mCharacter = new Model("/sdcard/rot/sphere.obj");
+  mCharacter->loadTexture("textures/happyface.png");
+  mCharacter->setPosition(5, 5, 10);
+  mDynamicObjects.push_back(mCharacter);
 
 /*
     Model* theBox = new Model("/sdcard/rot/cube.obj");
     theBox->loadTexture("textures/burlwood.png");
     mDynamicObjects.push_back(theBox);
 */
+  // Start a new game
+  mGameStatus = PLAYING;
 }
 
 
@@ -268,6 +284,11 @@ bool Scene::load(const char* path)
 void Scene::update()
 {
   float dt = 0.06; // Time differential, in seconds TODO: calculate, don't hardcode
+
+  glm::vec4 gravity = mWorldRotation * glm::vec4(0.0f, -2.0f, 0.0f, 0.0f);
+  //LOGI("Gravity: %f  %f  %f", gravity.x, gravity.y, gravity.z);
+
+  glm::vec3 charVelocity(0.0f, 0.0f, 0.0f);
 
   // Move the character
   if(mUi->forward() || mUi->backward()){
@@ -282,50 +303,77 @@ void Scene::update()
 
     float vel = mUi->forward() ? -5.0 : 5.0;
 
-    glm::vec3 newPosition = mCameraPosition + dt * vel * glm::vec3(moveVector.x, moveVector.y, moveVector.z);
+    charVelocity += vel * glm::vec3(moveVector.x, moveVector.y, moveVector.z);
     //mCameraPosition.y += dt * vel * moveVector.y;
     //mCameraPosition.z += dt * vel * moveVector.z;
     //LOGI("New position : %f %f %f", mCameraPosition.x, mCameraPosition.y, mCameraPosition.z);
-
-    bool collides = false;
-    for(int i = 0; collides == false && i < mStaticObjects.size(); i++){
-      collides |= mStaticObjects[i]->collidesWith(newPosition, 1.0);
-    }
-    if(!collides){
-      mCameraPosition = newPosition;
-    }
-    else{
-      // Play a collision sound or something clever.
-    }
-
   }
 
-  // Character collision
+  // TODO: fix cause of negative x gravity.  The whole x axis is flipped.
+  charVelocity += glm::vec3(-gravity.x, gravity.y, gravity.z); // TODO: use acceleration
+
+  glm::vec3 newPosition = mCameraPosition + dt * charVelocity;
+
+  for(int i = 0; i < mStaticObjects.size(); i++){
+    if(mStaticObjects[i]->collidesWith(newPosition, 1.0)){
+      // Make the normal component zero by projecting the velocity onto the
+      // normal and subtracting that value.
+      glm::vec3 cNorm = mStaticObjects[i]->collisionNormal(newPosition);
+      glm::vec3 normalForce = glm::dot(charVelocity, cNorm) * cNorm;
+      charVelocity -= normalForce;
+      //LOGI("nForce %d: %f %f %f", i, normalForce.x, normalForce.y, normalForce.z);
+      // TODO: friction on the tangential component
+      // charVelocity *= 1.0 - surfaceFriction; // 0.0 is ice, 1.0 is glue
+    }
+  }
+
+  //LOGI("Vel: %f %f %f", charVelocity.x, charVelocity.y, charVelocity.z);
+
+  // Now that we've handled collisions with walls, set the new position
+  mCameraPosition += dt * charVelocity;
+
+  // Apply gravity/physics to movable objects and detect collisions
 
   // Update the lighting based on the character position
   // This is really hacky...
   //glm::vec4 up = mWorldRotation * glm::vec4(0.0f, 10.0f, 0.0f, 0.0f);
   //mLightPosition = mCameraPosition + glm::vec3(up.x, up.y, up.z);
 
-  // Update particle system
 
-  // Apply gravity/physics to movable objects and detect collisions
-  glm::vec4 gravity = mWorldRotation * glm::vec4(0.0f, -2.0f, 0.0f, 0.0f);
-  //LOGI("Gravity: %f  %f  %f", gravity.x, gravity.y, gravity.z);
-  /*
   for(int i = 0; i < mDynamicObjects.size(); i++){
     mDynamicObjects[i]->applyGravity(gravity, mStaticObjects, dt);
   }
-  */
-
 
   // Check if the level is complete
+  if(mFinishMarker->collidesWith(mCameraPosition, 2.0)){
+    mGameStatus = WON;
+  }
 
   // Check if the player died
+  if(mCameraPosition.x < mXMin || mCameraPosition.x > mXMax ||
+     mCameraPosition.y < mYMin || mCameraPosition.y > mYMax ||
+     mCameraPosition.z < mZMin || mCameraPosition.z > mZMax){
+    // Game over!
+    LOGI("Game over; player fell to death: %f %f %f", mCameraPosition.x, mCameraPosition.y, mCameraPosition.z);
+    mGameStatus = LOST;
+  }
+
 }
 
 void Scene::renderFrame(void)
 {
+  // TODO: replace with real game over
+  if(mGameStatus == LOST){
+    glClearColor(0.5f, 0.0f, 0.0f, 0.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    return;
+  }
+  else if(mGameStatus == WON){
+    glClearColor(0.0f, 0.5f, 0.0f, 0.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    return;
+  }
+
   glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
   glClearDepthf(1.0f);
   checkGlError("glClearColor");
@@ -363,13 +411,16 @@ void Scene::renderFrame(void)
   }
   checkGlError("Render dynamic objects");
 
-  // Set the identity matrix and render all of the fixed objects
-  glUniformMatrix4fv(mContext.uniformModelView, 1, false, RenderContext::IDENTITY_MATRIX_4);
+  // Draw the static objects in the scene
   for(int i = 0; i < mStaticObjects.size(); i++){
+    glUniformMatrix4fv(mContext.uniformModelView, 1, false,
+        (GLfloat*)glm::value_ptr(mStaticObjects[i]->positionMatrix()));
     mStaticObjects[i]->render(mContext);
   }
   checkGlError("Render static objects");
 
+  // Draw the character
+  glUniformMatrix4fv(mContext.uniformModelView, 1, false, RenderContext::IDENTITY_MATRIX_4);
 
   glUseProgram(uiShaderProgram);
   glEnableVertexAttribArray(mUiContext.attrVertexPosition);

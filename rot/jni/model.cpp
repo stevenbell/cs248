@@ -210,3 +210,14 @@ void Model::subrender(RenderContext c)
   glDrawElements(GL_TRIANGLES, 3 * mTriangles.size(), GL_UNSIGNED_SHORT, 0);
 }
 
+bool Model::collidesWith(point3 p, float distance){
+  // TODO use extents, at least
+  if(fabs(p.x - mPosition[3][0]) < distance &&
+     fabs(p.y - mPosition[3][1]) < distance &&
+     fabs(p.z - mPosition[3][2]) < distance) {
+    return true;
+  }
+  else{
+    return false;
+  }
+}

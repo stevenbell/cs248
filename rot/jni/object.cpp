@@ -66,3 +66,9 @@ void Object::render(const RenderContext c)
   // For now, we're doing the position matrix outside...
   subrender(c); // Call the child's rendering method
 }
+
+glm::vec3 Object::collisionNormal(glm::vec3 p)
+{
+  vec3 normal = collisionNormal(vec3(p.x, p.y, p.z));
+  return(glm::vec3(normal.x, normal.y, normal.z));
+}

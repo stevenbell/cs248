@@ -15,6 +15,12 @@
 /* Singleton class representing the scene.
  * This contains handles to the GL resources.
  */
+enum GameStatus {
+  PLAYING,
+  WON,
+  LOST
+};
+
 class Scene
 {
 public:
@@ -32,10 +38,19 @@ private:
   static Scene* mInstance;
 
   bool mGraphicsConfigured; // True once the graphics context is set up and shaders are loaded
+  GameStatus mGameStatus;
 
   std::vector<Object*> mStaticObjects; // Things which are fixed in the world (which we can collide with)
   std::vector<Object*> mDynamicObjects; // Things which move (i.e, are updated by physics)
+  Object* mCharacter; // The main character, which collides with both static and dynamic objects
+  Object* mFinishMarker; // Object which we tag to complete a level
 
+  // Boundaries of the scene, used for testing death
+  float mXMin, mXMax;
+  float mYMin, mYMax;
+  float mZMin, mZMax;
+
+  // OpenGL stuff - this might need a better home
   GLuint gProgram;
   GLuint uiShaderProgram;
 
