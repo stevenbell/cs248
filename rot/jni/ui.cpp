@@ -61,8 +61,8 @@ bool UiElement::pointIn(float x, float y)
 }
 
 Ui::Ui() :
-  mForwardArrow(0.75, 0.80, 0.25, 0.2, "textures/forwardarrow.png"),
-  mBackArrow(0.75, 0.60, 0.25, 0.2, "textures/backarrow.png"),
+  mForwardArrow(0.75, 0.40, 0.25, 0.2, "textures/forwardarrow.png"),
+  mBackArrow(0.75, 0.20, 0.25, 0.2, "textures/backarrow.png"),
   mForwardDown(false),
   mBackDown(false),
   mJumpDown(false)

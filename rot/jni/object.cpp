@@ -1,6 +1,7 @@
 #include "jnibridge.h"
 #include "gl_util.h"
 #include "object.h"
+#include <gtc/matrix_transform.hpp>
 
 const GLfloat RenderContext::IDENTITY_MATRIX_4[16] = {1.0f, 0.0f, 0.0f, 0.0f,
                                                       0.0f, 1.0f, 0.0f, 0.0f,
@@ -59,6 +60,18 @@ void Object::setPosition(float x, float y, float z)
   mPosition[3][2] = z;
 }
 
+/* Sets the rotation by rotating around each world? axis in succession. */
+void Object::setRotation(float x, float y, float z)
+{
+  glm::mat4 newPosition(1.0);
+  newPosition = glm::rotate(newPosition, x, glm::vec3(1.0f, 0.0f, 0.0f));
+  newPosition = glm::rotate(newPosition, y, glm::vec3(0.0f, 1.0f, 0.0f));
+  newPosition = glm::rotate(newPosition, z, glm::vec3(0.0f, 0.0f, 1.0f));
+  newPosition[3][0] = mPosition[3][0]; // Copy over the translation
+  newPosition[3][1] = mPosition[3][1];
+  newPosition[3][2] = mPosition[3][2];
+  mPosition = newPosition;
+}
 
 void Object::render(const RenderContext c)
 {

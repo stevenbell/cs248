@@ -34,6 +34,7 @@ public:
 
 private:
   Scene(void);
+  void calculateDeviceRotation();
   glm::mat4 calculateCameraView(glm::vec3 cameraPosition, float aspectRatio);
   static Scene* mInstance;
 

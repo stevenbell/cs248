@@ -145,6 +145,46 @@ glm::mat4 calculateModelView(float rotX, float rotY, float rotZ, float scale)
 }
 */
 
+void Scene::calculateDeviceRotation()
+{
+  // Calculate the primary orthogonal direction by taking the scene look axis
+  // and finding the largest component
+  glm::mat4 r = mOrientation.getCameraOrientation();
+  glm::vec4 sceneLook = mWorldRotation * mDeviceAxisMapping * glm::transpose(r) * glm::vec4(0.0f, 0.0f, 1.0f, 0.0f);
+  glm::vec3 rotationAxis;
+  if(fabs(sceneLook.x) > fabs(sceneLook.y) && fabs(sceneLook.x) > fabs(sceneLook.z)){
+    // TODO: this is also part of the x-axis being flipped.. maybe?
+    rotationAxis = glm::vec3(copysignf(1.0f, -sceneLook.x), 0.0f, 0.0f);
+  }
+  else if(fabs(sceneLook.y) > fabs(sceneLook.z)){ // We know y or z is > x; which one?
+    rotationAxis = glm::vec3(0.0f, copysignf(1.0f, sceneLook.y), 0.0f);
+  }
+  else{
+    rotationAxis = glm::vec3(0.0f, 0.0f, copysignf(1.0f, sceneLook.z));
+  }
+
+  LOGI("rotation axis: %f  %f  %f", rotationAxis.x, rotationAxis.y, rotationAxis.z);
+
+  static Orientation::CardinalRotation prevRotation = Orientation::ROTATION_UNKNOWN;
+  Orientation::CardinalRotation cr = mOrientation.getCardinalRotation();
+  if((prevRotation == Orientation::ROTATION_UP && cr == Orientation::ROTATION_90) ||
+     (prevRotation == Orientation::ROTATION_90 && cr == Orientation::ROTATION_180) ||
+     (prevRotation == Orientation::ROTATION_180 && cr == Orientation::ROTATION_270) ||
+     (prevRotation == Orientation::ROTATION_270 && cr == Orientation::ROTATION_UP)){
+     mWorldRotation = glm::rotate(mWorldRotation, -90.0f, rotationAxis);
+  }
+  else if((prevRotation == Orientation::ROTATION_UP && cr == Orientation::ROTATION_270) ||
+          (prevRotation == Orientation::ROTATION_90 && cr == Orientation::ROTATION_UP) ||
+          (prevRotation == Orientation::ROTATION_180 && cr == Orientation::ROTATION_90) ||
+          (prevRotation == Orientation::ROTATION_270 && cr == Orientation::ROTATION_180)){
+    mWorldRotation = glm::rotate(mWorldRotation, 90.0f, rotationAxis);
+  }
+
+  if(cr != Orientation::ROTATION_UNKNOWN){
+    prevRotation = cr;
+  }
+}
+
 glm::mat4 Scene::calculateCameraView(glm::vec3 cameraPosition, float aspectRatio)
 {
   glm::mat4 m(1.0); // Identity matrix
@@ -179,12 +219,13 @@ glm::mat4 Scene::calculateCameraView(glm::vec3 cameraPosition, float aspectRatio
   // Multiply by the world rotation matrix to find the axis
   //glm::vec4 sceneAxis = sceneLookPoint; //mWorldRotation * sceneLookPoint;
   //LOGI("scene look point: %f %f %f", sceneLookPoint.x, sceneLookPoint.y, sceneLookPoint.z);
-
+/*
   // Hack to do this once for touch events:
   if(mDoRotation){
     mWorldRotation = glm::rotate(mWorldRotation, 90.0f, glm::vec3(0.0f, 0.0f, 1.0f));
     mDoRotation = false;
   }
+  */
 /*
   m = m * glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f),
                   glm::vec3(sceneLookPoint.x, sceneLookPoint.y, sceneLookPoint.z),
@@ -250,6 +291,7 @@ bool Scene::load(const char* path)
       mFinishMarker = new Model("/sdcard/rot/star.obj");
       mFinishMarker->loadTexture("textures/happyface.png");
       mFinishMarker->setPosition(x, y, z);
+      mFinishMarker->setRotation(90.0, 0.0, 0.0); // Upright wrt starting position
       mStaticObjects.push_back(mFinishMarker);
     }
     // Boundaries
@@ -285,6 +327,8 @@ void Scene::update()
 {
   float dt = 0.06; // Time differential, in seconds TODO: calculate, don't hardcode
 
+  calculateDeviceRotation();
+
   glm::vec4 gravity = mWorldRotation * glm::vec4(0.0f, -2.0f, 0.0f, 0.0f);
   //LOGI("Gravity: %f  %f  %f", gravity.x, gravity.y, gravity.z);
 
@@ -310,7 +354,7 @@ void Scene::update()
   }
 
   // TODO: fix cause of negative x gravity.  The whole x axis is flipped.
-  charVelocity += glm::vec3(-gravity.x, gravity.y, gravity.z); // TODO: use acceleration
+  charVelocity += glm::vec3(-gravity.x, gravity.y, -gravity.z); // TODO: use acceleration
 
   glm::vec3 newPosition = mCameraPosition + dt * charVelocity;
 
@@ -440,7 +484,7 @@ void Scene::touchEvent(float x, float y, int action)
     // Convert point to GL screen coordinates where the UI lives
     // (0, 0) is the top left in touch coordinate space
     mUi->handleTouchEvent(x*2.0/mWidth - 1.0, 1.0 - y*2.0/mHeight, action);
-  LOGI("Touch event, GL space: %f %f", x*2.0/mWidth - 1.0f, 1.0f - y*2.0/mHeight);
+  //LOGI("Touch event, GL space: %f %f", x*2.0/mWidth - 1.0f, 1.0f - y*2.0/mHeight);
 
   }
   else{
