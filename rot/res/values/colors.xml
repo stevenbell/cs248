@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="list_bg_default">#000000</color>
+    <color name="list_bg_select">#800000</color>
+    <color name="list_bg_highlight">#b00000</color>
+</resources>

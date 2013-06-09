@@ -1,5 +1,9 @@
 <resources>
 
-    <string name="app_name">Rot</string>
+    <string name="app_name">Rote</string>
+
+    <string name="select_level">Select a level:</string>
+
+    <string name="start_button">Play!</string>
 
 </resources>

@@ -50,15 +50,18 @@ import javax.microedition.khronos.opengles.GL10;
 class GL2JNIView extends GLSurfaceView {
     private static String TAG = "GL2JNIView";
     private static final boolean DEBUG = false;
+    GameSwitcher parent; // Parent application that handles
 
     public GL2JNIView(Context context) {
         super(context);
         init(false, 8, 0); // Use 8-bit depth
+        parent = (GameSwitcher) context;
     }
 
     public GL2JNIView(Context context, boolean translucent, int depth, int stencil) {
         super(context);
         init(translucent, depth, stencil);
+        parent = (GameSwitcher) context;
     }
 
     private void init(boolean translucent, int depth, int stencil) {
@@ -314,16 +317,25 @@ class GL2JNIView extends GLSurfaceView {
 
     private static class Renderer implements GLSurfaceView.Renderer {
         public void onDrawFrame(GL10 gl) {
-            JniBridge.step();
+            int gameStatus = JniBridge.step();
+            if(gameStatus == 1){
+                Log.i(TAG, "Win!");
+            }
+            else if(gameStatus == 2){
+                Log.i(TAG, "Lose!");
+            }
+            // Otherwise, carry on!
         }
 
         public void onSurfaceChanged(GL10 gl, int width, int height) {
+            Log.i(TAG, "onSurfaceChanged");
             JniBridge.init(width, height); // TODO: surfaceChanged isn't really the right method here...
-			JniBridge.loadLevel("levels/level02/level.dat"); // TODO: parameterize this
+			JniBridge.loadLevel("levels/" + "level02" + "/level.dat");
         }
 
         public void onSurfaceCreated(GL10 gl, EGLConfig config) {
             // Do nothing.
+            Log.i(TAG, "onSurfaceCreated");
         }
     }
 }

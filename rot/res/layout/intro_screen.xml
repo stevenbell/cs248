@@ -5,21 +5,38 @@
     android:orientation="vertical" >
 
     <ImageView
-        android:id="@+id/imageView1"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:src="@drawable/ic_launcher" />
-
-    <ExpandableListView
-        android:id="@+id/expandableListView1"
+        android:id="@+id/logoImageView"
         android:layout_width="match_parent"
-        android:layout_height="236dp" >
-    </ExpandableListView>
+        android:layout_height="0dp"
+        android:layout_weight="0.5"
+        android:paddingBottom="10dp"
+        android:paddingTop="10dp"
+        android:src="@drawable/rot_logo" />
+
+    <TextView
+        android:id="@+id/levelSelectLabel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        android:text="@string/select_level"
+        android:textAppearance="?android:attr/textAppearanceLarge" />
+
+    <ListView
+        android:id="@+id/levelList"
+        android:layout_width="match_parent"
+        android:layout_height="0dip"
+        android:layout_margin="10dp"
+        android:layout_weight="0.5"
+        android:choiceMode="singleChoice"
+        android:listSelector="@color/listcolors" >
+
+    </ListView>
 
     <Button
-        android:id="@+id/button1"
-        android:layout_width="wrap_content"
+        android:id="@+id/playButton"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Button" />
+        android:layout_margin="10dp"
+        android:text="@string/start_button" />
 
 </LinearLayout>

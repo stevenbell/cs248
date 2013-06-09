@@ -9,6 +9,7 @@ import android.app.Activity;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.os.Bundle;
+import android.util.Log;
 
 public class RotActivity extends Activity implements GameSwitcher {
 
@@ -38,15 +39,22 @@ public class RotActivity extends Activity implements GameSwitcher {
     }
 
     @Override
-    public void startGame() {
-        // TODO: Load the selected level
+    public void startGame(String levelId) {
+        Log.i("RotActivity", "Starting level " + levelId);
         
-        
-        // Go full screen?
         // Switch to the "playing" fragment
         FragmentTransaction ft = getFragmentManager().beginTransaction();
         ft.hide(introFrag);
         ft.show(gameFrag);
+        ft.commit();
+    }
+    
+    @Override
+    public void endGame() {
+        // Switch back to the level selection fragment
+        FragmentTransaction ft = getFragmentManager().beginTransaction();
+        ft.show(introFrag);
+        ft.hide(gameFrag);
         ft.commit();
     }
 

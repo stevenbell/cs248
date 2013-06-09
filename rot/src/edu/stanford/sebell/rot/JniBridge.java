@@ -19,7 +19,7 @@ public class JniBridge {
      */
      public static native void init(int width, int height);
      public static native void loadLevel(String levelName);
-     public static native void step();
+     public static native int step();
      public static native void setAssetManager(AssetManager am);
      public static native void setPngLoader(AssetLoader loader);
      public static native void touchEvent(float x, float y, int action);

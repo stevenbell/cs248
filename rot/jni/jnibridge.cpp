@@ -122,7 +122,7 @@ void JniBridge::loadText(const char* path, char** text)
 extern "C" {
     JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_JniBridge_init(JNIEnv * env, jobject obj,  jint width, jint height);
     JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_JniBridge_loadLevel(JNIEnv * env, jobject obj, jstring levelName);
-    JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_JniBridge_step(JNIEnv * env, jobject obj);
+    JNIEXPORT int JNICALL Java_edu_stanford_sebell_rot_JniBridge_step(JNIEnv * env, jobject obj);
     JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_JniBridge_setPngLoader(JNIEnv * env, jobject obj, jobject loader);
     JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_JniBridge_setAssetManager(JNIEnv * env, jobject obj, jobject am);
     JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_JniBridge_touchEvent(JNIEnv * env, jobject obj,  jfloat x, jfloat y, jint action);
@@ -140,10 +140,11 @@ JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_JniBridge_loadLevel(JNIEnv *
     Scene::instance()->load(env->GetStringUTFChars(levelName, 0));
 }
 
-JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_JniBridge_step(JNIEnv * env, jobject obj)
+JNIEXPORT int JNICALL Java_edu_stanford_sebell_rot_JniBridge_step(JNIEnv * env, jobject obj)
 {
     Scene::instance()->update(); // TODO: better multithread this!
     Scene::instance()->renderFrame();
+    return(0);
 }
 
 JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_JniBridge_setAssetManager(JNIEnv * env, jobject obj, jobject am)
