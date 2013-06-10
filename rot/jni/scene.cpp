@@ -28,47 +28,32 @@ Scene::Scene(void)
     mUi(NULL),
     mWidth(480), mHeight(640), mAspectRatio(1.0f)
 {
-  mWorldRotation = glm::mat4(1.0f); // Identity matrix
-  /* Hrm. This matrix looks familiar...
-  mWorldRotation = glm::mat4(-1.0f, 0.0f,  0.0f, 0.0f,
-                              0.0f, 0.0f,  -1.0f, 0.0f,
-                              0.0f, 1.0f,  0.0f, 0.0f,
-                              0.0f, 0.0f,  0.0f, 1.0f);
-                              */
+    reset();
+}
 
-  // Use this for a "portrait mode" mapping
-  // This makes the GL axes match the world axes, but that's not actually what we want.
-  /*
-  mDeviceAxisMapping = glm::mat4( 0.0f, 1.0f, 0.0f, 0.0f,
-                                  1.0f, 0.0f, 0.0f, 0.0f,
-                                  0.0f, 0.0f, 1.0f, 0.0f,
-                                  0.0f, 0.0f, 0.0f, 1.0f);
-                                  */
-  mDeviceAxisMapping = glm::mat4( 1.0f, 0.0f, 0.0f, 0.0f,
+void Scene::reset(void)
+{
+    mWorldRotation = glm::mat4(1.0f); // Identity matrix
+
+    mDeviceAxisMapping = glm::mat4( 1.0f, 0.0f, 0.0f, 0.0f,
                                   0.0f, 0.0f, 1.0f, 0.0f,
                                   0.0f, -1.0f, 0.0f, 0.0f,
                                   0.0f, 0.0f, 0.0f, 1.0f);
-  /*
-  FILE* f = fopen("/sdcard/rot/movement.spline", "r");
-  float t = 0.0f;
-  while(!feof(f)){
-    // Read each line of the file and append to the spline
-    float x, y, z;
-    fscanf(f, "%f %f %f", &x, &y, &z);
-    sX.addKeypoint(t, x);
-    sY.addKeypoint(t, y);
-    sZ.addKeypoint(t, z);
-    t += 1.0;
-  }
-
-  // HACK: hard-code the quaternions here
-  // Leave startQuat alone
-  endQuat = endQuat.rotate(glm::vec3(1.0f, 1.0f, 0.2f), 2.0f);
-  */
 
     mCameraPosition = glm::vec3(0.0f, 0.0f, 0.0f);
-}
 
+    // Empty the lists of objects and such...
+    while(!mDynamicObjects.empty()){
+      Object* o = mDynamicObjects.back();
+      delete o;
+      mDynamicObjects.pop_back();
+    }
+    while(!mStaticObjects.empty()){
+      Object* o = mStaticObjects.back();
+      delete o;
+      mStaticObjects.pop_back();
+    }
+}
 
 bool Scene::setupGraphics(int w, int h) {
     // Print debugging information
@@ -151,20 +136,28 @@ void Scene::calculateDeviceRotation()
 {
   // Calculate the primary orthogonal direction by taking the scene look axis
   // and finding the largest component
+
+  // We convert a scene point into GL coordinates using
+  //   projectionMatrix * r * mDeviceAxisMapping * mWorldRotation * m;
+  // So we can convert a look-axis in GL coordinates (the Z axis) into scene
+  // coordinates by taking the inverse (aka, transpose):
+  //   glm::transpose(r * mDeviceAxisMapping * mWorldRotation)
   glm::mat4 r = mOrientation.getCameraOrientation();
-  glm::vec4 sceneLook = mWorldRotation * mDeviceAxisMapping * glm::transpose(r) * glm::vec4(0.0f, 0.0f, 1.0f, 0.0f);
+  glm::vec4 sceneLook = glm::transpose(r * mDeviceAxisMapping * mWorldRotation) * glm::vec4(0.0f, 0.0f, 1.0f, 0.0f);
+
   glm::vec3 rotationAxis;
   if(fabs(sceneLook.x) > fabs(sceneLook.y) && fabs(sceneLook.x) > fabs(sceneLook.z)){
     // TODO: this is also part of the x-axis being flipped.. maybe?
     rotationAxis = glm::vec3(copysignf(1.0f, -sceneLook.x), 0.0f, 0.0f);
   }
   else if(fabs(sceneLook.y) > fabs(sceneLook.z)){ // We know y or z is > x; which one?
-    rotationAxis = glm::vec3(0.0f, copysignf(1.0f, sceneLook.y), 0.0f);
+    rotationAxis = glm::vec3(0.0f, copysignf(1.0f, -sceneLook.y), 0.0f);
   }
   else{
-    rotationAxis = glm::vec3(0.0f, 0.0f, copysignf(1.0f, sceneLook.z));
+    rotationAxis = glm::vec3(0.0f, 0.0f, copysignf(1.0f, -sceneLook.z));
   }
 
+  LOGI("Look: %f  %f  %f", sceneLook.x, sceneLook.y, sceneLook.z);
   //LOGI("rotation axis: %f  %f  %f", rotationAxis.x, rotationAxis.y, rotationAxis.z);
 
   static Orientation::CardinalRotation prevRotation = Orientation::ROTATION_UNKNOWN;
@@ -339,9 +332,10 @@ int Scene::update()
 
   calculateDeviceRotation();
 
-  glm::vec4 gravity = mWorldRotation * glm::vec4(0.0f, -2.0f, 0.0f, 0.0f);
-  glm::vec3 gravity3 = glm::vec3(-gravity.x, gravity.y, -gravity.z);
-  LOGI("Gravity: %f  %f  %f", -gravity.x, gravity.y, gravity.z);
+  //glm::vec4 gravity = mWorldRotation * glm::vec4(0.0f, -2.0f, 0.0f, 0.0f);
+  glm::vec4 gravity = glm::transpose(mWorldRotation) * glm::vec4(0.0f, -2.0f, 0.0f, 0.0f);
+  glm::vec3 gravity3 = glm::vec3(gravity.x, gravity.y, gravity.z);
+  //LOGI("Gravity: %f  %f  %f", -gravity.x, gravity.y, gravity.z);
 
   glm::vec3 charVelocity(0.0f, 0.0f, 0.0f);
 
@@ -364,9 +358,7 @@ int Scene::update()
     //LOGI("New position : %f %f %f", mCameraPosition.x, mCameraPosition.y, mCameraPosition.z);
   }
 
-  // TODO: fix cause of negative x gravity.  The whole x axis is flipped.
-  charVelocity += glm::vec3(-gravity.x, gravity.y, -gravity.z); // TODO: use acceleration; replace with gravity3
-
+  charVelocity += gravity3;
   glm::vec3 newPosition = mCameraPosition + dt * charVelocity;
 
   for(int i = 0; i < mStaticObjects.size(); i++){

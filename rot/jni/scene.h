@@ -26,6 +26,7 @@ class Scene
 public:
   static Scene* instance(void);
 
+  void reset(void);
   bool load(const char* path);
   bool setupGraphics(int w, int h);
   int update(void);

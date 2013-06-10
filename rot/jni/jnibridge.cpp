@@ -137,6 +137,7 @@ JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_JniBridge_init(JNIEnv * env,
 
 JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_JniBridge_loadLevel(JNIEnv * env, jobject obj, jstring levelName)
 {
+    Scene::instance()->reset();
     Scene::instance()->load(env->GetStringUTFChars(levelName, 0));
 }
 
