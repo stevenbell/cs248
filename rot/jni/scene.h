@@ -28,7 +28,7 @@ public:
 
   bool load(const char* path);
   bool setupGraphics(int w, int h);
-  void update(void);
+  int update(void);
   void renderFrame(void);
   void touchEvent(float x, float y, int action); // TODO: move me?
 
@@ -43,7 +43,6 @@ private:
 
   std::vector<Object*> mStaticObjects; // Things which are fixed in the world (which we can collide with)
   std::vector<Object*> mDynamicObjects; // Things which move (i.e, are updated by physics)
-  Object* mCharacter; // The main character, which collides with both static and dynamic objects
   Object* mFinishMarker; // Object which we tag to complete a level
 
   // Boundaries of the scene, used for testing death
@@ -79,8 +78,6 @@ private:
 
   Ui* mUi; // Need a pointer since we can't init until we have a GL context
 
-  // HACK:
-  bool mDoRotation;
   float mAspectRatio;
   float mWidth, mHeight;
 };

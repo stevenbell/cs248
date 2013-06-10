@@ -22,9 +22,11 @@ Scene* Scene::instance(void)
 
 Scene::Scene(void)
   : mGraphicsConfigured(false),
-    mDoRotation(false),
     mXMin(-10.0), mXMax(10.0), mYMin(-10.0), mYMax(10.0), mZMin(-10.0), mZMax(10.0),
-    mGameStatus(PLAYING)
+    mGameStatus(PLAYING),
+    mFinishMarker(NULL),
+    mUi(NULL),
+    mWidth(480), mHeight(640), mAspectRatio(1.0f)
 {
   mWorldRotation = glm::mat4(1.0f); // Identity matrix
   /* Hrm. This matrix looks familiar...
@@ -76,7 +78,7 @@ bool Scene::setupGraphics(int w, int h) {
     printGLString("Extensions", GL_EXTENSIONS);
 
     // Compile and link the shader program
-    gProgram = createProgram("shaders/world.vert", "shaders/dumbtexture.frag");
+    gProgram = createProgram("shaders/world.vert", "shaders/lighttexture.frag");
     uiShaderProgram = createProgram("shaders/tex_passthrough.vert", "shaders/dumbtexture.frag");
     if (!gProgram || !uiShaderProgram) {
         LOGE("Failed to compile at least one shader program!");
@@ -163,7 +165,7 @@ void Scene::calculateDeviceRotation()
     rotationAxis = glm::vec3(0.0f, 0.0f, copysignf(1.0f, sceneLook.z));
   }
 
-  LOGI("rotation axis: %f  %f  %f", rotationAxis.x, rotationAxis.y, rotationAxis.z);
+  //LOGI("rotation axis: %f  %f  %f", rotationAxis.x, rotationAxis.y, rotationAxis.z);
 
   static Orientation::CardinalRotation prevRotation = Orientation::ROTATION_UNKNOWN;
   Orientation::CardinalRotation cr = mOrientation.getCardinalRotation();
@@ -172,12 +174,14 @@ void Scene::calculateDeviceRotation()
      (prevRotation == Orientation::ROTATION_180 && cr == Orientation::ROTATION_270) ||
      (prevRotation == Orientation::ROTATION_270 && cr == Orientation::ROTATION_UP)){
      mWorldRotation = glm::rotate(mWorldRotation, -90.0f, rotationAxis);
+  LOGI("rotate -90: %f  %f  %f", rotationAxis.x, rotationAxis.y, rotationAxis.z);
   }
   else if((prevRotation == Orientation::ROTATION_UP && cr == Orientation::ROTATION_270) ||
           (prevRotation == Orientation::ROTATION_90 && cr == Orientation::ROTATION_UP) ||
           (prevRotation == Orientation::ROTATION_180 && cr == Orientation::ROTATION_90) ||
           (prevRotation == Orientation::ROTATION_270 && cr == Orientation::ROTATION_180)){
     mWorldRotation = glm::rotate(mWorldRotation, 90.0f, rotationAxis);
+  LOGI("rotate +90: %f  %f  %f", rotationAxis.x, rotationAxis.y, rotationAxis.z);
   }
 
   if(cr != Orientation::ROTATION_UNKNOWN){
@@ -219,13 +223,7 @@ glm::mat4 Scene::calculateCameraView(glm::vec3 cameraPosition, float aspectRatio
   // Multiply by the world rotation matrix to find the axis
   //glm::vec4 sceneAxis = sceneLookPoint; //mWorldRotation * sceneLookPoint;
   //LOGI("scene look point: %f %f %f", sceneLookPoint.x, sceneLookPoint.y, sceneLookPoint.z);
-/*
-  // Hack to do this once for touch events:
-  if(mDoRotation){
-    mWorldRotation = glm::rotate(mWorldRotation, 90.0f, glm::vec3(0.0f, 0.0f, 1.0f));
-    mDoRotation = false;
-  }
-  */
+
 /*
   m = m * glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f),
                   glm::vec3(sceneLookPoint.x, sceneLookPoint.y, sceneLookPoint.z),
@@ -259,6 +257,12 @@ bool Scene::load(const char* path)
   char* value;
   key = strtok(text, ":\n"); // Could use just ":", but this lets us eat empty newlines
   while(key != NULL){
+    if(key[0] == '#'){ // Eat the comment and move on to the next line
+      LOGI("Skipping comment %s", key);
+      key = strtok(NULL, ":\n");
+      continue;
+    }
+
     value = strtok(NULL, "\n");
 
     LOGI("Key: %s  Value: %s", key, value);
@@ -306,11 +310,16 @@ bool Scene::load(const char* path)
   free(text);
 
 
-/*
-  mCharacter = new Model("/sdcard/rot/sphere.obj");
-  mCharacter->loadTexture("textures/happyface.png");
-  mCharacter->setPosition(5, 5, 10);
-  mDynamicObjects.push_back(mCharacter);
+
+  Object* o = new Model("/sdcard/rot/cube.obj");
+  o->loadTexture("textures/burlwood.png");
+  o->setPosition(5, 12, 22);
+  mDynamicObjects.push_back(o);
+
+  o = new Model("/sdcard/rot/cube.obj");
+  o->loadTexture("textures/burlwood.png");
+  o->setPosition(3, 12, 38);
+  mDynamicObjects.push_back(o);
 
 /*
     Model* theBox = new Model("/sdcard/rot/cube.obj");
@@ -322,15 +331,17 @@ bool Scene::load(const char* path)
 }
 
 
-/* Updates all of the positions, etc. */
-void Scene::update()
+/* Updates all of the positions, etc.
+ * Returns a value indicating the state of the game. */
+int Scene::update()
 {
   float dt = 0.06; // Time differential, in seconds TODO: calculate, don't hardcode
 
   calculateDeviceRotation();
 
   glm::vec4 gravity = mWorldRotation * glm::vec4(0.0f, -2.0f, 0.0f, 0.0f);
-  //LOGI("Gravity: %f  %f  %f", gravity.x, gravity.y, gravity.z);
+  glm::vec3 gravity3 = glm::vec3(-gravity.x, gravity.y, -gravity.z);
+  LOGI("Gravity: %f  %f  %f", -gravity.x, gravity.y, gravity.z);
 
   glm::vec3 charVelocity(0.0f, 0.0f, 0.0f);
 
@@ -354,7 +365,7 @@ void Scene::update()
   }
 
   // TODO: fix cause of negative x gravity.  The whole x axis is flipped.
-  charVelocity += glm::vec3(-gravity.x, gravity.y, -gravity.z); // TODO: use acceleration
+  charVelocity += glm::vec3(-gravity.x, gravity.y, -gravity.z); // TODO: use acceleration; replace with gravity3
 
   glm::vec3 newPosition = mCameraPosition + dt * charVelocity;
 
@@ -378,14 +389,19 @@ void Scene::update()
 
   // Apply gravity/physics to movable objects and detect collisions
 
-  // Update the lighting based on the character position
-  // This is really hacky...
+  // Update the lighting based on the character position.  The single point
+  // light hovers above the character as they move.
   //glm::vec4 up = mWorldRotation * glm::vec4(0.0f, 10.0f, 0.0f, 0.0f);
   //mLightPosition = mCameraPosition + glm::vec3(up.x, up.y, up.z);
 
+  // The single light lives up above the world...
+  // TODO: load this from the level file
+  // Note that all lighting is calculated in an un-rotated coordinate frame
+  mLightPosition = glm::vec3(5.0f, 20.0f, 20.0f);
+
 
   for(int i = 0; i < mDynamicObjects.size(); i++){
-    mDynamicObjects[i]->applyGravity(gravity, mStaticObjects, dt);
+    mDynamicObjects[i]->applyGravity(gravity3, mStaticObjects, dt);
   }
 
   // Check if the level is complete
@@ -398,10 +414,11 @@ void Scene::update()
      mCameraPosition.y < mYMin || mCameraPosition.y > mYMax ||
      mCameraPosition.z < mZMin || mCameraPosition.z > mZMax){
     // Game over!
-    LOGI("Game over; player fell to death: %f %f %f", mCameraPosition.x, mCameraPosition.y, mCameraPosition.z);
+    //LOGI("Game over; player fell to death: %f %f %f", mCameraPosition.x, mCameraPosition.y, mCameraPosition.z);
     mGameStatus = LOST;
   }
 
+  return(mGameStatus);
 }
 
 void Scene::renderFrame(void)
@@ -439,7 +456,7 @@ void Scene::renderFrame(void)
   //LOGI("Light position: %f %f %f", mLightPosition.x, mLightPosition.y, mLightPosition.z);
 
   glUniform4f(mUniformAmbient, 0.2f, 0.2f, 0.3f, 1.0f);
-  glUniform4f(mUniformDiffuse, 1.0f, 0.95f, 0.8f, 1.0f);
+  glUniform4f(mUniformDiffuse, 1.0f, 1.0f, 0.2f, 1.0f);
   //glUniform4f(specularUniform, 1.0f, 1.0f, 1.0f, 1.0f);
   //glUniform3fv(mContext.uniformLightPos, 1, (GLfloat*)glm::value_ptr(mLightPosition));
   glUniform3f(mContext.uniformLightPos, mLightPosition.x, mLightPosition.y, mLightPosition.z);
@@ -480,12 +497,13 @@ void Scene::touchEvent(float x, float y, int action)
 {
   //LOGI("Touch event: %f %f", x, y);
 
-  if(y < 500){
+  //if(y < 500){
     // Convert point to GL screen coordinates where the UI lives
     // (0, 0) is the top left in touch coordinate space
     mUi->handleTouchEvent(x*2.0/mWidth - 1.0, 1.0 - y*2.0/mHeight, action);
   //LOGI("Touch event, GL space: %f %f", x*2.0/mWidth - 1.0f, 1.0f - y*2.0/mHeight);
 
+    /*
   }
   else{
     if(action == 0x00){
@@ -497,5 +515,6 @@ void Scene::touchEvent(float x, float y, int action)
       }
     }
   }
+  */
 }
 

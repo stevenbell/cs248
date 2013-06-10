@@ -31,7 +31,7 @@ public:
   Object();
   bool loadTexture(const char* filename);
   const glm::mat4& positionMatrix() { return mPosition; };
-  void applyGravity(const glm::vec4 gravity, const std::vector<Object*> &fixedObjects, float dt);
+  void applyGravity(const glm::vec3 gravity, const std::vector<Object*> &fixedObjects, const float dt);
   void setPosition(float x, float y, float z);
   void setRotation(float x, float y, float z);
   void render(RenderContext c);
@@ -47,7 +47,7 @@ protected:
   // These things apply only to dynamic objects and might be better off in a
   // subclass or interface
   glm::mat4 mPosition; // Position and orientation of the object (model view matrix)
-  glm::vec4 mVelocity;
+  glm::vec3 mVelocity;
 
   Image mTextureImage;
   bool mUseTexture;

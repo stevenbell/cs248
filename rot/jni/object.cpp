@@ -39,9 +39,31 @@ bool Object::loadTexture(const char* filename)
   return mUseTexture;
 }
 
-void Object::applyGravity(const glm::vec4 gravity, const std::vector<Object*> &fixedObjects, float dt)
+void Object::applyGravity(const glm::vec3 gravity, const std::vector<Object*> &fixedObjects, const float dt)
 {
   mVelocity += gravity * dt;
+
+  glm::vec3 oldPosition = glm::vec3(mPosition[3][0], mPosition[3][1], mPosition[3][2]);
+  glm::vec3 newPosition = oldPosition + dt * mVelocity;
+
+  for(int i = 0; i < fixedObjects.size(); i++){
+    if(fixedObjects[i]->collidesWith(newPosition, 1.0)){
+      // Make the normal component zero by projecting the velocity onto the
+      // normal and subtracting that value.
+      glm::vec3 cNorm = fixedObjects[i]->collisionNormal(newPosition);
+      glm::vec3 normalForce = glm::dot(mVelocity, cNorm) * cNorm;
+      mVelocity -= normalForce;
+      //LOGI("nForce %d: %f %f %f", i, normalForce.x, normalForce.y, normalForce.z);
+      // TODO: friction on the tangential component
+      // charVelocity *= 1.0 - surfaceFriction; // 0.0 is ice, 1.0 is glue
+    }
+  }
+
+  mPosition[3][0] = oldPosition.x + mVelocity.x;
+  mPosition[3][1] = oldPosition.y + mVelocity.y;
+  mPosition[3][2] = oldPosition.z + mVelocity.z;
+
+  /*
   // TODO: replace all this junk with real collision detection
   mPosition[3][0] += mVelocity.x * -dt;
   if(mPosition[3][0] > 4.5){ mPosition[3][0] = 4.5; mVelocity[0] = 0; }
@@ -51,6 +73,7 @@ void Object::applyGravity(const glm::vec4 gravity, const std::vector<Object*> &f
   if(mPosition[3][1] < -4.5){ mPosition[3][1] = -4.5; mVelocity[1] = 0; }
 
   mPosition[3][2] = -3.0f; //+= mVelocity.z * dt;
+  */
 }
 
 void Object::setPosition(float x, float y, float z)

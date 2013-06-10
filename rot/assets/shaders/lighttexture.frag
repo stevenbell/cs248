@@ -14,12 +14,10 @@ uniform sampler2D sampler;
 
 void main()
 {
-  //vec4 bumpNormal = texture2D(sampler, vTexCoord) * vec4(1.0, 0.4, 0.2, 1.0);
-  vec4 bumpNormal = vNormal;
+  vec4 texColor = texture2D(sampler, vTexCoord);
   
   vec3 lightIncidence = normalize(lightPosition - vPos.xyz);
-  vec4 lightColor = ambientColor +
-                 diffuseColor * max(0.0, dot(lightIncidence, normalize(bumpNormal.xyz)));
-  //gl_FragColor = texture2D(sampler, vTexCoord) * lightColor;
-  gl_FragColor = lightColor;
+  vec4 lightColor = ambientColor + diffuseColor * max(0.0, dot(lightIncidence, vNormal.xyz));
+  
+  gl_FragColor = lightColor * texColor;
 }
