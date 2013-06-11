@@ -18,6 +18,7 @@ public class RotActivity extends Activity implements GameSwitcher {
     GameFrag gameFrag;
     ResultFrag resultFrag;
     AssetLoader loader;
+    AudioPlayer player;
 
     @Override
     protected void onCreate(Bundle icicle) {
@@ -27,6 +28,9 @@ public class RotActivity extends Activity implements GameSwitcher {
         JniBridge.setAssetManager(getAssets());
         loader = new AssetLoader(getAssets());
         JniBridge.setPngLoader(loader);
+        
+        player = new AudioPlayer(this);
+        //JniBridge.setAudioPlayer(player);
 
         // Create/extract fragments for each of the game screens
         FragmentManager fm = getFragmentManager();
@@ -44,6 +48,7 @@ public class RotActivity extends Activity implements GameSwitcher {
 
     @Override
     public void startGame(String levelId) {
+        player.playSound(AudioPlayer.START);
         Log.i("RotActivity", "Starting level " + levelId);
 		JniBridge.loadLevel("levels/" + levelId + "/level.dat");
         
@@ -58,6 +63,12 @@ public class RotActivity extends Activity implements GameSwitcher {
     public void endGame(int result) {
         resultFrag.setResult(result);
         
+        if(result == 1){
+            player.playSound(AudioPlayer.WIN);
+        }
+        else{
+            player.playSound(AudioPlayer.LOSE);
+        }
         // Switch to the game result fragment
         FragmentTransaction ft = getFragmentManager().beginTransaction();
         ft.show(resultFrag);

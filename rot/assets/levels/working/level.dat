@@ -1,0 +1,39 @@
+name: Level 3
+difficulty: easy
+author: Steven Bell
+email: sebell@stanford.edu
+start: 5, 5, 2
+finish: 5, 1, 48
+bounds: -5, 25, -5, 35, -5, 25
+
+# Basement floor
+wall:   0.0,  0.0,  0.0,    20.0,  0.0,  0.0,      0.0,  0.0, 20.0,     0.25, textures/mud.png
+
+# Basement walls
+wall:   0.0,  0.0,  0.0,     0.0,  0.0,  20.0,      0.0, 10.0,  0.0,      0.25, textures/marble.png
+wall:  20.0,  0.0,  0.0,    20.0,  0.0,  20.0,     20.0, 10.0,  0.0,      0.25, textures/marble.png
+wall:   0.0,  0.0,  0.0,    20.0,  0.0,   0.0,      0.0, 10.0,  0.0,      0.25, textures/marble.png
+wall:   0.0,  0.0, 20.0,    20.0,  0.0,  20.0,      0.0, 10.0, 20.0,      0.25, textures/marble.png
+
+# First floor
+wall:   0.0, 10.0,  0.0,    20.0, 10.0,  0.0,      0.0,  10.0, 10.0,     0.25, textures/mud.png
+wall:  10.0, 10.0, 10.0,    20.0, 10.0, 10.0,     10.0,  10.0, 20.0,     0.25, textures/mud.png
+
+# First floor walls
+wall:   0.0, 10.0,  0.0,     0.0, 10.0,  20.0,      0.0, 20.0,  0.0,      0.25, textures/brushed.png
+wall:  20.0, 10.0,  0.0,    20.0, 10.0,  20.0,     20.0, 20.0,  0.0,      0.25, textures/brushed.png
+wall:   0.0, 10.0,  0.0,    20.0, 10.0,   0.0,      0.0, 20.0,  0.0,      0.25, textures/brushed.png
+wall:   0.0, 10.0, 20.0,    20.0, 10.0,  20.0,      0.0, 20.0, 20.0,      0.25, textures/brushed.png
+
+# Second floor
+wall:   0.0, 20.0,  0.0,    20.0, 20.0,  0.0,      0.0,  20.0, 10.0,     0.25, textures/mud.png
+wall:  10.0, 20.0, 10.0,    20.0, 20.0, 10.0,     10.0,  20.0, 20.0,     0.25, textures/mud.png
+
+# Second floor walls
+wall:   0.0, 20.0,  0.0,     0.0, 20.0,  20.0,      0.0, 30.0,  0.0,      0.25, textures/burlwood.png
+wall:  20.0, 20.0,  0.0,    20.0, 20.0,  20.0,     20.0, 30.0,  0.0,      0.25, textures/burlwood.png
+wall:   0.0, 20.0,  0.0,    20.0, 20.0,   0.0,      0.0, 30.0,  0.0,      0.25, textures/burlwood.png
+wall:   0.0, 20.0, 20.0,    20.0, 20.0,  20.0,      0.0, 30.0, 20.0,      0.25, textures/burlwood.png
+
+# Ceiling
+wall:   0.0, 30.0,  0.0,    20.0, 30.0,  0.0,      0.0, 30.0, 20.0,     0.25, textures/happyface.png

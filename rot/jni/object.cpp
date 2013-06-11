@@ -54,7 +54,7 @@ void Object::applyGravity(const glm::vec3 gravity, const std::vector<Object*> &f
   glm::vec3 newPosition = oldPosition + dt * mVelocity;
 
   for(int i = 0; i < fixedObjects.size(); i++){
-    if(fixedObjects[i]->collidesWith(newPosition, 1.0)){ // TODO: use the object bounds here
+    if(fixedObjects[i]->collidesWith(newPosition, 0.5)){ // TODO: use the object bounds here
       // Make the normal component zero by projecting the velocity onto the
       // normal and subtracting that value.
       glm::vec3 cNorm = fixedObjects[i]->collisionNormal(newPosition);

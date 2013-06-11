@@ -1,0 +1,21 @@
+name: Level 3
+difficulty: easy
+author: Steven Bell
+email: sebell@stanford.edu
+start: 5, 5, 2
+finish: -2, 5, 18.5
+bounds: -5, 25, -5, 35, -5, 25
+
+light: 10, 20, 10
+
+# Floor
+wall:   0.0,  0.0,  0.0,     0.0,  0.0,  20.0,      20.0,  0.0,  0.0,     0.25, textures/mud.png
+
+# Walls
+wall:   0.0,  0.0,  0.0,     0.0,  0.0,  20.0,      0.0, 30.0,  0.0,      0.25, textures/marble.png
+wall:  20.0,  0.0,  0.0,    20.0,  0.0,  20.0,     20.0, 30.0,  0.0,      0.25, textures/marble.png
+wall:   0.0,  0.0,  0.0,    20.0,  0.0,   0.0,      0.0, 30.0,  0.0,      0.25, textures/marble.png
+
+# "Escape" wall
+wall:  -3.0,  0.0, 20.0,    23.0,  0.0,  20.0,     -3.0, 33.0, 20.0,      0.25, textures/marble.png
+

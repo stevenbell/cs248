@@ -1,0 +1,42 @@
+name: Level 6
+difficulty: easy
+author: Steven Bell
+email: sebell@stanford.edu
+start: 15, 5, 2
+finish: 65, 1.5, 2
+bounds: -5, 80, -5, 15, -5, 35
+
+light:  20, 20, 20
+
+# Floor pieces
+wall:  10.0,  0.0,  0.0,    10.0,  0.0, 10.0,     20.0,  0.0,  0.0,     0.25, textures/mud.png
+wall:   0.0,  0.0, 10.0,     0.0,  0.0, 20.0,     50.0,  0.0,  0.0,     0.25, textures/mud.png
+wall:  40.0,  0.0,  0.0,    40.0,  0.0, 10.0,     70.0,  0.0,  0.0,     0.25, textures/mud.png
+
+# Walls around the starting spot
+wall:   10.0,  0.0,  0.0,    10.0, 10.0,  0.0,     10.0,  0.0, 10.0,      0.25, textures/marble.png
+wall:   20.0,  0.0, 10.0,    20.0,  0.0,  0.0,     20.0, 10.0, 10.0,      0.25, textures/marble.png
+wall:   10.0,  0.0,  0.0,    20.0,  0.0,  0.0,     10.0, 10.0,  0.0,      0.25, textures/marble.png
+
+# Walls around the box corner
+wall:    0.0,  0.0, 10.0,    10.0,  0.0, 10.0,      0.0, 10.0, 10.0,      0.25, textures/marble.png
+wall:    0.0,  0.0, 10.0,     0.0, 10.0, 10.0,      0.0,  0.0, 20.0,      0.25, textures/marble.png
+wall:    0.0,  0.0, 20.0,    50.0,  0.0, 20.0,      0.0, 10.0, 20.0,      0.25, textures/marble.png
+
+# Walls around the kink
+wall:   20.0,  0.0, 10.0,    20.0, 10.0, 10.0,     40.0,  0.0, 10.0,      0.25, textures/marble.png
+wall:   40.0,  0.0,  0.0,    40.0, 10.0,  0.0,     40.0,  0.0, 10.0,      0.25, textures/marble.png
+wall:   50.0,  0.0, 10.0,    50.0, 10.0, 10.0,     50.0,  0.0, 20.0,      0.25, textures/marble.png
+
+# Walls around the star
+wall:   50.0,  0.0, 10.0,    50.0, 10.0, 10.0,     75.0,  0.0, 10.0,      0.25, textures/marble.png
+wall:   40.0,  0.0,  0.0,    40.0, 10.0,  0.0,     75.0,  0.0,  0.0,      0.25, textures/marble.png
+wall:   75.0,  0.0,  0.0,    75.0, 10.0,  0.0,     75.0,  0.0, 10.0,      0.25, textures/marble.png
+
+# Ceiling
+wall:  10.0, 10.0,  0.0,    10.0, 10.0, 10.0,     20.0, 10.0,  0.0,     0.25, textures/brushed.png
+wall:   0.0, 10.0, 10.0,     0.0, 10.0, 20.0,     50.0, 10.0,  0.0,     0.25, textures/brushed.png
+wall:  40.0, 10.0,  0.0,    40.0, 10.0, 10.0,     70.0, 10.0,  0.0,     0.25, textures/brushed.png
+
+# Boxes (nooo!)
+model: 60, 5, 5,   3.0, models/cube.obj

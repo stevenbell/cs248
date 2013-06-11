@@ -1,0 +1,26 @@
+name: Level 4
+difficulty: easy
+author: Steven Bell
+email: sebell@stanford.edu
+start: 2.5, 5, 2.5
+finish: 7.5, 20, 1.5
+bounds: -5, 25, -5, 35, -5, 25
+
+# Starting pad
+wall:   0.0,  0.0,  0.0,     0.0,  0.0,  5.0,      5.0,  0.0,  0.0,     0.25, textures/yellow.png
+
+# Jump sequence
+wall:   0.0,  0.0, 20.0,     5.0,  0.0, 20.0,      0.0,  5.0, 20.0,     0.25, textures/blue.png
+wall:  20.0,  0.0, 15.0,    20.0,  0.0, 20.0,     20.0,  5.0, 15.0,     0.25, textures/red.png
+wall:  15.0, 20.0, 15.0,    20.0, 20.0, 15.0,     15.0, 20.0, 20.0,     0.25, textures/green.png
+wall:   5.0, 15.0, 15.0,     5.0, 15.0, 20.0,      5.0, 20.0, 15.0,     0.25, textures/red.png
+wall:   5.0, 15.0,  0.0,    10.0, 15.0,  0.0,      5.0, 20.0,  0.0,     0.25, textures/blue.png
+
+
+# Decoys
+
+# Walls
+
+# "Escape" wall
+#wall:   0.0,  0.0, 20.0,    20.0,  0.0,  20.0,      0.0, 30.0, 20.0,      0.25, textures/marble.png
+
