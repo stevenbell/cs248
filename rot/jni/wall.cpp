@@ -56,6 +56,11 @@ Wall::Wall(point3 a, point3 b, point3 c, GLfloat thickness)
   checkGlError("Wall::Wall finished");
 }
 
+Wall::~Wall()
+{
+  glDeleteBuffers(4, mAttributeBuffers);
+}
+
 void Wall::subrender(RenderContext c)
 {
   glBindBuffer(GL_ARRAY_BUFFER, mAttributeBuffers[VERTEX]);

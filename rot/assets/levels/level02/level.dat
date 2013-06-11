@@ -6,6 +6,8 @@ start: 5, 5, 2
 finish: 5, 1, 48
 bounds: -5, 15, -5, 15, -5, 55
 
+light: 5, 20, 10
+
 # Two pieces of floor
 wall:   0.0,  0.0,  0.0,     0.0,  0.0,  25.0,     10.0,  0.0,  0.0,     0.25, textures/mud.png
 wall:   0.0,  0.0, 35.0,     0.0,  0.0,  50.0,     10.0,  0.0, 35.0,     0.25, textures/mud.png

@@ -32,6 +32,7 @@ public:
   int update(void);
   void renderFrame(void);
   void touchEvent(float x, float y, int action); // TODO: move me?
+  const static int MAX_LIGHTS = 3;
 
 private:
   Scene(void);
@@ -40,6 +41,7 @@ private:
   static Scene* mInstance;
 
   bool mGraphicsConfigured; // True once the graphics context is set up and shaders are loaded
+  char* mPendingScene;
   GameStatus mGameStatus;
 
   std::vector<Object*> mStaticObjects; // Things which are fixed in the world (which we can collide with)
@@ -66,11 +68,16 @@ private:
   GLuint mUniformSpecular;
 
   glm::vec3 mCameraPosition;
+  glm::vec3 mCharVelocity;
+  float mRunningSpeed;
+
   glm::mat4 mProjectionMatrix;
   glm::mat4 mModelViewMatrix;
 
   // For now, we have only one light.  Maybe we'll add more later.
   glm::vec3 mLightPosition;
+  float mLightPositions[MAX_LIGHTS][3];
+  int mActiveLights;
 
   // This clearly isn't part of the scene...
   Orientation mOrientation;

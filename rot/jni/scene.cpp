@@ -21,7 +21,7 @@ Scene* Scene::instance(void)
 }
 
 Scene::Scene(void)
-  : mGraphicsConfigured(false),
+  : mGraphicsConfigured(false), mPendingScene(NULL),
     mXMin(-10.0), mXMax(10.0), mYMin(-10.0), mYMax(10.0), mZMin(-10.0), mZMax(10.0),
     mGameStatus(PLAYING),
     mFinishMarker(NULL),
@@ -41,6 +41,9 @@ void Scene::reset(void)
                                   0.0f, 0.0f, 0.0f, 1.0f);
 
     mCameraPosition = glm::vec3(0.0f, 0.0f, 0.0f);
+    mCharVelocity = glm::vec3(0.0f, 0.0f, 0.0f);
+    mLightPosition = glm::vec3(0.0f, 0.0f, 0.0f);
+    mActiveLights = 0;
 
     // Empty the lists of objects and such...
     while(!mDynamicObjects.empty()){
@@ -106,31 +109,16 @@ bool Scene::setupGraphics(int w, int h) {
     mUi = new Ui;
 
     mGraphicsConfigured = true;
+
+    // If we've already been asked to load a scene (but couldn't, because there
+    // wasn't a graphics context), then load it now.
+    if(mPendingScene != NULL){
+      load(mPendingScene);
+    }
+
     return true;
 }
 
-/* Set the position, size, and orientation of the model within the scene.
- * The orientation is specified in terms of euler angles.
- * The mesh is centered and scaled based on its extents.
- * Note that following GL conventions, the angles are in degrees, not radians */
-/*
-glm::mat4 calculateModelView(float rotX, float rotY, float rotZ, float scale)
-{
-  //Extents e = model->extents();
-  glm::mat4 m(1.0); // Identity matrix
-
-  //m = glm::translate(m, -glm::vec3((e.maxX + e.minX)/2, -(e.maxY + e.minY)/2, -(e.maxZ + e.minZ)/2));
-  m = glm::scale(m, glm::vec3(scale, scale, scale));
-
-  //printf("minx: %f  maxx: %f\n", e.minX, e.maxX);
-
-  m = glm::rotate(m, rotX, glm::vec3(1.0, 0.0, 0.0));
-  m = glm::rotate(m, rotY, glm::vec3(0.0, 1.0, 0.0));
-  m = glm::rotate(m, rotZ, glm::vec3(0.0, 0.0, 1.0));
-
-  return(m);
-}
-*/
 
 void Scene::calculateDeviceRotation()
 {
@@ -147,7 +135,6 @@ void Scene::calculateDeviceRotation()
 
   glm::vec3 rotationAxis;
   if(fabs(sceneLook.x) > fabs(sceneLook.y) && fabs(sceneLook.x) > fabs(sceneLook.z)){
-    // TODO: this is also part of the x-axis being flipped.. maybe?
     rotationAxis = glm::vec3(copysignf(1.0f, -sceneLook.x), 0.0f, 0.0f);
   }
   else if(fabs(sceneLook.y) > fabs(sceneLook.z)){ // We know y or z is > x; which one?
@@ -157,7 +144,7 @@ void Scene::calculateDeviceRotation()
     rotationAxis = glm::vec3(0.0f, 0.0f, copysignf(1.0f, -sceneLook.z));
   }
 
-  LOGI("Look: %f  %f  %f", sceneLook.x, sceneLook.y, sceneLook.z);
+  //LOGI("Look: %f  %f  %f", sceneLook.x, sceneLook.y, sceneLook.z);
   //LOGI("rotation axis: %f  %f  %f", rotationAxis.x, rotationAxis.y, rotationAxis.z);
 
   static Orientation::CardinalRotation prevRotation = Orientation::ROTATION_UNKNOWN;
@@ -237,7 +224,20 @@ glm::mat4 Scene::calculateCameraView(glm::vec3 cameraPosition, float aspectRatio
 bool Scene::load(const char* path)
 {
   // If the graphics context doesn't exist yet, nothing here will work right.
-  assert(mGraphicsConfigured);
+  // Save the path that was requested, and when we get the graphics context,
+  // call this again.  If the path is the saved path, don't copy it; that ends badly.
+  if(path != mPendingScene){
+    if(mPendingScene != NULL){
+      // If there was a previous request, delete it
+      delete mPendingScene;
+    }
+    mPendingScene = (char*)malloc(strlen(path) + 1); // +1 for null terminator
+    strcpy(mPendingScene, path);
+  }
+
+  if(!mGraphicsConfigured){
+    return false;
+  }
 
   // Load the level configuration file
   char* text;
@@ -274,6 +274,16 @@ bool Scene::load(const char* path)
       w->loadTexture(texPath);
       mStaticObjects.push_back(w);
     }
+    else if(strcmp(key, "model") == 0){
+      float x, y, z, scale;
+      char path[200];
+      sscanf(value, "%f, %f, %f, %f, %s", &x, &y, &z, &scale, path);
+
+      Object* o = new Model("/sdcard/rot/cube.obj");
+      o->loadTexture("textures/burlwood.png");
+      o->setPosition(x, y, z);
+      mDynamicObjects.push_back(o);
+    }
     // Start position
     else if(strcmp(key, "start") == 0){
       float x, y, z;
@@ -286,7 +296,7 @@ bool Scene::load(const char* path)
       sscanf(value, "%f, %f, %f", &x, &y, &z);
 
       mFinishMarker = new Model("/sdcard/rot/star.obj");
-      mFinishMarker->loadTexture("textures/happyface.png");
+      mFinishMarker->loadTexture("textures/yellow.png");
       mFinishMarker->setPosition(x, y, z);
       mFinishMarker->setRotation(90.0, 0.0, 0.0); // Upright wrt starting position
       mStaticObjects.push_back(mFinishMarker);
@@ -295,32 +305,21 @@ bool Scene::load(const char* path)
     else if(strcmp(key, "bounds") == 0){
       sscanf(value, "%f, %f, %f, %f, %f, %f", &mXMin, &mXMax, &mYMin, &mYMax, &mZMin, &mZMax);
     }
+    else if(strcmp(key, "light") == 0){
+      // Note that all lighting is calculated in an un-rotated coordinate frame
+      float x, y, z;
+      sscanf(value, "%f, %f, %f", &x, &y, &z);
+
+      //mLightPositions[mActiveLights]
+      mLightPosition = glm::vec3(x, y, z);
+    }
 
     key = strtok(NULL, ":\n");
   }
 
-
   free(text);
 
-
-
-  Object* o = new Model("/sdcard/rot/cube.obj");
-  o->loadTexture("textures/burlwood.png");
-  o->setPosition(5, 12, 22);
-  mDynamicObjects.push_back(o);
-
-  o = new Model("/sdcard/rot/cube.obj");
-  o->loadTexture("textures/burlwood.png");
-  o->setPosition(3, 12, 38);
-  mDynamicObjects.push_back(o);
-
-/*
-    Model* theBox = new Model("/sdcard/rot/cube.obj");
-    theBox->loadTexture("textures/burlwood.png");
-    mDynamicObjects.push_back(theBox);
-*/
-  // Start a new game
-  mGameStatus = PLAYING;
+  mGameStatus = PLAYING; // Start a new game
 }
 
 
@@ -332,12 +331,17 @@ int Scene::update()
 
   calculateDeviceRotation();
 
-  //glm::vec4 gravity = mWorldRotation * glm::vec4(0.0f, -2.0f, 0.0f, 0.0f);
-  glm::vec4 gravity = glm::transpose(mWorldRotation) * glm::vec4(0.0f, -2.0f, 0.0f, 0.0f);
+  glm::vec4 gravity = glm::transpose(mWorldRotation) * glm::vec4(0.0f, -1.0f, 0.0f, 0.0f);
   glm::vec3 gravity3 = glm::vec3(gravity.x, gravity.y, gravity.z);
-  //LOGI("Gravity: %f  %f  %f", -gravity.x, gravity.y, gravity.z);
+  //LOGI("Gravity: %f  %f  %f", gravity.x, gravity.y, gravity.z);
 
-  glm::vec3 charVelocity(0.0f, 0.0f, 0.0f);
+  // The running velocity does not integrate the way gravity does, so we can't just add it
+  // The solution is to keep two velocity vectors, and check them together for collisions
+  glm::vec3 fallVelocity = mCharVelocity;
+  glm::vec3 runVelocity(0.0f, 0.0f, 0.0f);
+
+  // Apply gravity to the character
+  fallVelocity += gravity3;
 
   // Move the character
   if(mUi->forward() || mUi->backward()){
@@ -347,49 +351,75 @@ int Scene::update()
 
     glm::vec4 up = mWorldRotation * glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
     glm::vec4 moveVector = sceneLookPoint - (up * glm::dot(sceneLookPoint, up));
+    glm::vec3 move3 = glm::vec3(moveVector.x, moveVector.y, moveVector.z);
+
+    // Increase and clamp the velocity
+    mRunningSpeed += mUi->forward() ? -0.2 : 0.2;
+    if(mRunningSpeed > 5.0f)  mRunningSpeed = 5.0f;
+    if(mRunningSpeed < -5.0f)  mRunningSpeed = -5.0f;
 
     //LOGI("Scene look: %f %f %f", moveVector.x, moveVector.y, moveVector.z);
-
-    float vel = mUi->forward() ? -5.0 : 5.0;
-
-    charVelocity += vel * glm::vec3(moveVector.x, moveVector.y, moveVector.z);
-    //mCameraPosition.y += dt * vel * moveVector.y;
-    //mCameraPosition.z += dt * vel * moveVector.z;
-    //LOGI("New position : %f %f %f", mCameraPosition.x, mCameraPosition.y, mCameraPosition.z);
+    // If the present velocity in the direction of running is less than the maximum,
+    runVelocity = mRunningSpeed * glm::vec3(moveVector.x, moveVector.y, moveVector.z);
+  }
+  else{
+    // If neither button is being pressed, stop
+    mRunningSpeed = 0;
   }
 
-  charVelocity += gravity3;
-  glm::vec3 newPosition = mCameraPosition + dt * charVelocity;
+  glm::vec3 newPosition = mCameraPosition + dt * (fallVelocity + runVelocity);
 
   for(int i = 0; i < mStaticObjects.size(); i++){
     if(mStaticObjects[i]->collidesWith(newPosition, 1.0)){
       // Make the normal component zero by projecting the velocity onto the
       // normal and subtracting that value.
       glm::vec3 cNorm = mStaticObjects[i]->collisionNormal(newPosition);
-      glm::vec3 normalForce = glm::dot(charVelocity, cNorm) * cNorm;
-      charVelocity -= normalForce;
-      //LOGI("nForce %d: %f %f %f", i, normalForce.x, normalForce.y, normalForce.z);
-      // TODO: friction on the tangential component
-      // charVelocity *= 1.0 - surfaceFriction; // 0.0 is ice, 1.0 is glue
+      float gNormalMag = glm::dot(fallVelocity, cNorm); // Magnitude of the normal force
+      float rNormalMag = glm::dot(runVelocity, cNorm);
+      // If the velocity is pointed into the normal (i.e, they have opposite signs),
+      // then apply the force.  Otherwise, it's not a real collision.
+      if(gNormalMag < 0){
+        // Subtracting here, normalForce is the right direction and cNorm is negative
+        fallVelocity -= gNormalMag * cNorm;
+        // TODO: friction on tangential component
+        // fallVelocity *= 1.0 - surfaceFriction; // 0.0 is ice, 1.0 is glue
+      }
+      if(rNormalMag < 0){
+        runVelocity -= rNormalMag * cNorm;
+      }
     }
   }
 
-  //LOGI("Vel: %f %f %f", charVelocity.x, charVelocity.y, charVelocity.z);
+  // Now do the same for dynamic objects (e.g, crates)
+  // First, recalculate the new position using the collisions we've already handled
+  newPosition = mCameraPosition + dt * (fallVelocity + runVelocity);
+
+  for(int i = 0; i < mDynamicObjects.size(); i++){
+    if(mDynamicObjects[i]->collidesWith(newPosition, 1.0)){
+      glm::vec3 cNorm = mDynamicObjects[i]->collisionNormal(newPosition);
+      float fNormalMag = glm::dot(fallVelocity, cNorm); // Magnitude of the normal force
+      float rNormalMag = glm::dot(runVelocity, cNorm); // Magnitude of the normal force
+      // If the velocity is pointed into the normal (i.e, they have opposite signs),
+      // then apply the force.  Otherwise, it's not a real collision.
+      if(fNormalMag < 0){
+        // Subtracting here, normalForce is the right direction and cNorm is negative
+        //fallVelocity -= normalMag * cNorm;
+        fallVelocity = glm::vec3(0.0f, 0.0f, 0.0f);
+      }
+      if(rNormalMag < 0){
+        runVelocity = glm::vec3(0.0f, 0.0f, 0.0f);
+      }
+    }
+  }
+
+  //LOGI("Vel: %f %f %f", fallVelocity.x, fallVelocity.y, fallVelocity.z);
 
   // Now that we've handled collisions with walls, set the new position
-  mCameraPosition += dt * charVelocity;
+  mCharVelocity = fallVelocity;
+  mCameraPosition += dt * (fallVelocity + runVelocity);
 
   // Apply gravity/physics to movable objects and detect collisions
 
-  // Update the lighting based on the character position.  The single point
-  // light hovers above the character as they move.
-  //glm::vec4 up = mWorldRotation * glm::vec4(0.0f, 10.0f, 0.0f, 0.0f);
-  //mLightPosition = mCameraPosition + glm::vec3(up.x, up.y, up.z);
-
-  // The single light lives up above the world...
-  // TODO: load this from the level file
-  // Note that all lighting is calculated in an un-rotated coordinate frame
-  mLightPosition = glm::vec3(5.0f, 20.0f, 20.0f);
 
 
   for(int i = 0; i < mDynamicObjects.size(); i++){
@@ -447,8 +477,8 @@ void Scene::renderFrame(void)
   // Set up the lighting
   //LOGI("Light position: %f %f %f", mLightPosition.x, mLightPosition.y, mLightPosition.z);
 
-  glUniform4f(mUniformAmbient, 0.2f, 0.2f, 0.3f, 1.0f);
-  glUniform4f(mUniformDiffuse, 1.0f, 1.0f, 0.2f, 1.0f);
+  glUniform4f(mUniformAmbient, 0.3f, 0.3f, 0.35f, 1.0f);
+  glUniform4f(mUniformDiffuse, 0.8f, 0.8f, 0.6f, 1.0f);
   //glUniform4f(specularUniform, 1.0f, 1.0f, 1.0f, 1.0f);
   //glUniform3fv(mContext.uniformLightPos, 1, (GLfloat*)glm::value_ptr(mLightPosition));
   glUniform3f(mContext.uniformLightPos, mLightPosition.x, mLightPosition.y, mLightPosition.z);

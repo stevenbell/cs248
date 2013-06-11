@@ -21,9 +21,11 @@ class Model : public Object
 {
 public:
   Model(const char* filename);
+  ~Model();
 
   virtual void subrender(RenderContext c);
   virtual bool collidesWith(point3 p, float distance);
+  virtual vec3 collisionNormal(point3 p);
 
   void toggleFlatShading() { mFlatShading = !mFlatShading; };
   Extents extents() { return mExtents; }

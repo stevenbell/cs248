@@ -330,7 +330,6 @@ class GL2JNIView extends GLSurfaceView {
         public void onSurfaceChanged(GL10 gl, int width, int height) {
             Log.i(TAG, "onSurfaceChanged");
             JniBridge.init(width, height); // TODO: surfaceChanged isn't really the right method here...
-			JniBridge.loadLevel("levels/" + "level02" + "/level.dat");
         }
 
         public void onSurfaceCreated(GL10 gl, EGLConfig config) {

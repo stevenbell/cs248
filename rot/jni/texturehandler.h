@@ -3,6 +3,13 @@
 
 struct Image
 {
+public:
+  ~Image(){
+    if(data){
+      delete(data);
+    }
+  }
+
   int width;
   int height;
   unsigned char* data;

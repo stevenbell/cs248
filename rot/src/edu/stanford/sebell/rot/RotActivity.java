@@ -41,6 +41,7 @@ public class RotActivity extends Activity implements GameSwitcher {
     @Override
     public void startGame(String levelId) {
         Log.i("RotActivity", "Starting level " + levelId);
+		JniBridge.loadLevel("levels/" + levelId + "/level.dat");
         
         // Switch to the "playing" fragment
         FragmentTransaction ft = getFragmentManager().beginTransaction();

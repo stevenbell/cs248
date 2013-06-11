@@ -190,6 +190,10 @@ void Model::loadVertexBuffers()
   free(indexArr);
 }
 
+Model::~Model()
+{
+  glDeleteBuffers(4, mAttributeBuffers);
+}
 
 void Model::subrender(RenderContext c)
 {
@@ -220,4 +224,10 @@ bool Model::collidesWith(point3 p, float distance){
   else{
     return false;
   }
+}
+
+vec3 Model::collisionNormal(point3 p)
+{
+  point3 normal(p.x - mPosition[3][0], p.y - mPosition[3][1], p.z - mPosition[3][2]);
+  return(normal / normal.norm());
 }

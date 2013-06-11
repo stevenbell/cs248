@@ -29,6 +29,8 @@ class Object
 {
 public:
   Object();
+  virtual ~Object();
+
   bool loadTexture(const char* filename);
   const glm::mat4& positionMatrix() { return mPosition; };
   void applyGravity(const glm::vec3 gravity, const std::vector<Object*> &fixedObjects, const float dt);
@@ -38,7 +40,7 @@ public:
 
   virtual bool collidesWith(vec3 p, float distance){ return false; };
   bool collidesWith(glm::vec3 p, float distance){ return collidesWith(vec3(p.x, p.y, p.z), distance); };
-  virtual vec3 collisionNormal(point3 p){ return vec3(1.0f, 0.0f, 0.0f); };
+  virtual vec3 collisionNormal(point3 p) = 0; //{ return vec3(1.0f, 0.0f, 0.0f); };
   glm::vec3 collisionNormal(glm::vec3 p);
 
 protected:
