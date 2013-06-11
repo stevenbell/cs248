@@ -54,14 +54,14 @@ class GL2JNIView extends GLSurfaceView {
 
     public GL2JNIView(Context context) {
         super(context);
-        init(false, 8, 0); // Use 8-bit depth
         parent = (GameSwitcher) context;
+        init(false, 8, 0); // Use 8-bit depth
     }
 
     public GL2JNIView(Context context, boolean translucent, int depth, int stencil) {
         super(context);
-        init(translucent, depth, stencil);
         parent = (GameSwitcher) context;
+        init(translucent, depth, stencil);
     }
 
     private void init(boolean translucent, int depth, int stencil) {
@@ -90,7 +90,7 @@ class GL2JNIView extends GLSurfaceView {
                              new ConfigChooser(5, 6, 5, 0, depth, stencil) );
 
         /* Set the renderer responsible for frame rendering */
-        setRenderer(new Renderer());
+        setRenderer(new Renderer(parent));
     }
     
     @Override
@@ -316,13 +316,21 @@ class GL2JNIView extends GLSurfaceView {
     }
 
     private static class Renderer implements GLSurfaceView.Renderer {
+        GameSwitcher parent = null;
+        public Renderer(GameSwitcher p){
+            parent = p;
+            Log.i(TAG, "Initialized renderer with parent" + p);
+        }
+        
         public void onDrawFrame(GL10 gl) {
             int gameStatus = JniBridge.step();
             if(gameStatus == 1){
                 Log.i(TAG, "Win!");
+                parent.endGame(gameStatus);
             }
             else if(gameStatus == 2){
                 Log.i(TAG, "Lose!");
+                parent.endGame(gameStatus);
             }
             // Otherwise, carry on!
         }

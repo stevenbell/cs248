@@ -14,5 +14,10 @@
         android:name="edu.stanford.sebell.rot.GameFrag"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
-   
+    <fragment
+        android:id="@+id/resultFragment"
+        android:name="edu.stanford.sebell.rot.ResultFrag"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+        
 </LinearLayout>

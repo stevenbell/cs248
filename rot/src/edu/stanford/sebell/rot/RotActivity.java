@@ -8,6 +8,7 @@ package edu.stanford.sebell.rot;
 import android.app.Activity;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
+import android.app.backup.RestoreObserver;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -15,6 +16,7 @@ public class RotActivity extends Activity implements GameSwitcher {
 
     IntroFrag introFrag;
     GameFrag gameFrag;
+    ResultFrag resultFrag;
     AssetLoader loader;
 
     @Override
@@ -30,11 +32,13 @@ public class RotActivity extends Activity implements GameSwitcher {
         FragmentManager fm = getFragmentManager();
         introFrag = (IntroFrag) fm.findFragmentById(R.id.introFragment);
         gameFrag = (GameFrag) fm.findFragmentById(R.id.gameFragment);
+        resultFrag = (ResultFrag) fm.findFragmentById(R.id.resultFragment);
 
         // Show the intro screen
         FragmentTransaction ft = getFragmentManager().beginTransaction();
         ft.show(introFrag);
         ft.hide(gameFrag);
+        ft.hide(resultFrag);
         ft.commit();
     }
 
@@ -51,12 +55,24 @@ public class RotActivity extends Activity implements GameSwitcher {
     }
     
     @Override
-    public void endGame() {
+    public void endGame(int result) {
+        resultFrag.setResult(result);
+        
+        // Switch to the game result fragment
+        FragmentTransaction ft = getFragmentManager().beginTransaction();
+        ft.show(resultFrag);
+        ft.hide(gameFrag);
+        ft.commit();
+    }
+    
+    @Override
+    public void newGame()
+    {
         // Switch back to the level selection fragment
         FragmentTransaction ft = getFragmentManager().beginTransaction();
         ft.show(introFrag);
-        ft.hide(gameFrag);
-        ft.commit();
+        ft.hide(resultFrag);
+        ft.commit();       
     }
 
     @Override

@@ -119,6 +119,17 @@ void JniBridge::loadText(const char* path, char** text)
   AAsset_close(file); // TODO: does this free the buffer?
 }
 
+void JniBridge::setSoundManager(JNIEnv* env, jobject soundManager)
+{
+
+
+}
+
+void JniBridge::playSound(int soundId)
+{
+  LOGI("Someday!");
+}
+
 extern "C" {
     JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_JniBridge_init(JNIEnv * env, jobject obj,  jint width, jint height);
     JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_JniBridge_loadLevel(JNIEnv * env, jobject obj, jstring levelName);
@@ -137,15 +148,16 @@ JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_JniBridge_init(JNIEnv * env,
 
 JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_JniBridge_loadLevel(JNIEnv * env, jobject obj, jstring levelName)
 {
+    JniBridge::instance()->setEnv(env); // We have to reload this when we switch fragments, because the environment changes??
     Scene::instance()->reset();
     Scene::instance()->load(env->GetStringUTFChars(levelName, 0));
 }
 
 JNIEXPORT int JNICALL Java_edu_stanford_sebell_rot_JniBridge_step(JNIEnv * env, jobject obj)
 {
-    Scene::instance()->update(); // TODO: better multithread this!
+    int gameStatus = Scene::instance()->update(); // TODO: better multithread this!
     Scene::instance()->renderFrame();
-    return(0);
+    return(gameStatus);
 }
 
 JNIEXPORT void JNICALL Java_edu_stanford_sebell_rot_JniBridge_setAssetManager(JNIEnv * env, jobject obj, jobject am)

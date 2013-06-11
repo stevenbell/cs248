@@ -2,5 +2,6 @@ package edu.stanford.sebell.rot;
 
 public interface GameSwitcher {
 	void startGame(String levelId);
-	void endGame();
+	void endGame(int result);
+	void newGame();
 }

@@ -50,8 +50,7 @@ public class IntroFrag extends Fragment {
 		names.add("Level 3: A small conundrum");
 		names.add("Level 4: Space");
 		names.add("Level 5: Boxes");
-		names.add("Level 6: Boxes hurt!");
-		names.add("Level 7: Thinking with boxes");
+		names.add("Level 6: Thinking with boxes");
 		listAdapter = new ArrayAdapter<String>(getActivity(), R.layout.level_list_element, names);
 		levelList.setAdapter(listAdapter);
 		levelList.setOnItemClickListener(new OnItemClickListener() {

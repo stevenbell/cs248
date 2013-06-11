@@ -15,10 +15,13 @@ public:
   void setEnv(JNIEnv* env);
   void setAssetManager(JNIEnv* env, jobject assetManager);
   void setPngLoader(JNIEnv* env, jobject pngLoader);
+  void setSoundManager(JNIEnv* env, jobject soundManager);
 
   // These methods are invoked from the C++ side to retrieve things from the JVM
   Image loadPng(const char* path);
   void loadText(const char* path, char** text);
+  void playSound(int);
+
 
 private:
   JniBridge();
